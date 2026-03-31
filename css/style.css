@@ -1,0 +1,102 @@
+/* Definition lists — PicoCSS does not style dt/dd */
+dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25em 1em;
+}
+dt {
+  font-weight: bold;
+}
+dd {
+  margin: 0;
+}
+
+/* Fuel/cargo progress bars — scoped to avoid overriding full-width bars */
+dl progress,
+.delivery-progress progress {
+  width: 6rem;
+  vertical-align: middle;
+}
+
+/* Labels / pills — extends PicoCSS <mark> with variants */
+mark {
+  border-radius: var(--pico-border-radius);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+mark.secondary { background-color: var(--pico-secondary-background); color: var(--pico-secondary-inverse); }
+mark.ins       { background-color: var(--pico-ins-color); color: var(--pico-primary-inverse); }
+mark.del       { background-color: var(--pico-del-color); color: var(--pico-primary-inverse); }
+mark.primary   { background-color: var(--pico-primary-background); color: var(--pico-primary-inverse); }
+
+/* Grouped labels — wrapping flex container */
+.label-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25em;
+}
+
+/* Clickable saved-token pills */
+.saved-token[role="button"] {
+  cursor: pointer;
+}
+.saved-token .remove-token {
+  margin-left: 0.3em;
+  opacity: 0.7;
+  text-decoration: none;
+  cursor: pointer;
+}
+.saved-token .remove-token:hover {
+  opacity: 1;
+}
+
+/* Contract delivery progress */
+.delivery-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+/* Mobile: show dropdown menu, hide desktop nav */
+.desktop-nav {
+  display: none;
+}
+
+/* Active nav link */
+nav a[aria-current="page"] {
+  font-weight: bold;
+}
+
+@media (min-width: 768px) {
+  /* Desktop: show horizontal nav, hide dropdown */
+  .desktop-nav {
+    display: flex;
+  }
+  nav details.dropdown {
+    display: none;
+  }
+}
+
+/* Waypoint/contract cards for mobile — hidden table on mobile */
+.responsive-table {
+  display: none;
+}
+.card-list {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .responsive-table {
+    display: table;
+    width: 100%;
+  }
+  .card-list {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

@@ -1,0 +1,28 @@
+name: Verify Icon Mappings
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 9am UTC
+  push:
+    paths:
+      - 'icons.json'
+      - 'api-docs/models/ShipFrame.json'
+      - 'api-docs/models/FactionSymbol.json'
+      - 'api-docs/models/WaypointType.json'
+      - 'api-docs/models/SystemType.json'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify icon mappings against API spec
+        run: python scripts/verify_icons.py
