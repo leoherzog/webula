@@ -43,7 +43,8 @@ export async function render(params, page = 1) {
         ${getDiscoveredSystems().map(s => `<option value="${s}">`).join('')}
       </datalist>
       <article>
-        <div id="system-map" style="width:100%;height:400px;background:var(--pico-card-background-color);"></div>
+        <header>System Map</header>
+        <div id="system-map" style="width:100%;height:400px;"></div>
       </article>
     `;
 
@@ -60,7 +61,7 @@ export async function render(params, page = 1) {
       const hasMarket = wp.traits?.some(t => t.symbol === 'MARKETPLACE');
       cards += `
         <article>
-          <header>${icon(WAYPOINT_TYPES, wp.type)} <strong>${wp.symbol}</strong> &mdash; ${wp.type}</header>
+          <header><a href="#/system/${systemSymbol}/waypoint/${wp.symbol}">${icon(WAYPOINT_TYPES, wp.type)} <strong>${wp.symbol}</strong></a> &mdash; ${wp.type}</header>
           <dl>
             <dt>Position</dt><dd>(${wp.x}, ${wp.y})</dd>
             <dt>Traits</dt><dd><span class="label-group">${traitLabels}</span></dd>
@@ -76,30 +77,32 @@ export async function render(params, page = 1) {
 
     // Desktop table
     let table = `
-      <table class="responsive-table">
-        <thead>
-          <tr><th>Symbol</th><th>Type</th><th>Position</th><th>Faction</th><th>Traits</th><th></th></tr>
-        </thead>
-        <tbody>
-          ${waypoints.map(wp => {
-            const traitLabels = wp.traits?.map(t => `<mark class="secondary">${t.symbol}</mark>`).join('') || '-';
-            const hasMarket = wp.traits?.some(t => t.symbol === 'MARKETPLACE');
-            return `
-              <tr>
-                <td>${icon(WAYPOINT_TYPES, wp.type)} ${wp.symbol}</td>
-                <td>${wp.type}</td>
-                <td>(${wp.x}, ${wp.y})</td>
-                <td>${wp.faction?.symbol ? `${icon(FACTIONS, wp.faction.symbol)} ${wp.faction.symbol}` : '-'}</td>
-                <td><span class="label-group">${traitLabels}</span></td>
-                <td>
-                  ${hasMarket ? `<button class="outline market-btn" data-system="${systemSymbol}" data-waypoint="${wp.symbol}">Market</button>` : ''}
-                </td>
-              </tr>
-              <tr id="market-row-${wp.symbol}" style="display:none"><td colspan="6"><div id="market-table-${wp.symbol}"></div></td></tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
+      <div class="overflow-auto">
+        <table class="responsive-table">
+          <thead>
+            <tr><th>Symbol</th><th>Type</th><th>Position</th><th>Faction</th><th>Traits</th><th></th></tr>
+          </thead>
+          <tbody>
+            ${waypoints.map(wp => {
+              const traitLabels = wp.traits?.map(t => `<mark class="secondary">${t.symbol}</mark>`).join('') || '-';
+              const hasMarket = wp.traits?.some(t => t.symbol === 'MARKETPLACE');
+              return `
+                <tr>
+                  <td><a href="#/system/${systemSymbol}/waypoint/${wp.symbol}">${icon(WAYPOINT_TYPES, wp.type)} ${wp.symbol}</a></td>
+                  <td>${wp.type}</td>
+                  <td>(${wp.x}, ${wp.y})</td>
+                  <td>${wp.faction?.symbol ? `${icon(FACTIONS, wp.faction.symbol)} ${wp.faction.symbol}` : '-'}</td>
+                  <td><span class="label-group">${traitLabels}</span></td>
+                  <td>
+                    ${hasMarket ? `<button class="outline market-btn" data-system="${systemSymbol}" data-waypoint="${wp.symbol}">Market</button>` : ''}
+                  </td>
+                </tr>
+                <tr id="market-row-${wp.symbol}" style="display:none"><td colspan="6"><div id="market-table-${wp.symbol}"></div></td></tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
     `;
 
     main.innerHTML += cards + table;
@@ -140,7 +143,7 @@ async function loadMarket(btn) {
       if (row) row.style.display = '';
     }
   } catch (err) {
-    const errHtml = `<p><mark>${escapeHtml(err.message)}</mark></p>`;
+    const errHtml = `<p><span class="pico-color-red-500">${escapeHtml(err.message)}</span></p>`;
     const mobileEl = document.getElementById(`market-${wp}`);
     if (mobileEl) mobileEl.innerHTML = errHtml;
   }

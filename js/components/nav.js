@@ -3,10 +3,10 @@ import { navigate, currentPath } from '../router.js';
 import { icon, FACTIONS } from '../icons.js';
 
 const links = [
-  { hash: '#/dashboard', label: 'Dashboard' },
-  { hash: '#/fleet', label: 'Fleet' },
-  { hash: '#/contracts', label: 'Contracts' },
-  { hash: '#/system', label: 'System' },
+  { hash: '#/dashboard', label: 'Dashboard', icon: 'fa-gauge-high' },
+  { hash: '#/fleet', label: 'Fleet', icon: 'fa-shuttle-space-vertical' },
+  { hash: '#/contracts', label: 'Contracts', icon: 'fa-file-contract' },
+  { hash: '#/system', label: 'System', icon: 'fa-solar-system' },
 ];
 
 export function renderNav() {
@@ -16,12 +16,11 @@ export function renderNav() {
 
   const navLinks = links.map(l => {
     const current = path.startsWith(l.hash.slice(1)) ? ' aria-current="page"' : '';
-    return `<li><a href="${l.hash}"${current}>${l.label}</a></li>`;
+    return `<li><a href="${l.hash}"${current}><i class="fa-solid ${l.icon}"></i> ${l.label}</a></li>`;
   }).join('');
 
   nav.innerHTML = `
-    <ul>
-      <li><strong><a href="#/dashboard" class="contrast">SpaceTraders</a></strong></li>
+    <ul class="mobile-nav">
       <li>
         <details class="dropdown">
           <summary>Menu</summary>
@@ -35,8 +34,14 @@ export function renderNav() {
       ${navLinks}
     </ul>
     <ul>
-      <li>${agent ? `${agent.startingFaction ? icon(FACTIONS, agent.startingFaction) + ' ' : ''}${agent.symbol} &mdash; ${agent.credits?.toLocaleString() ?? '?'}c` : ''}</li>
-      <li><a href="#" id="logout-btn" class="secondary">Logout</a></li>
+      <li>
+        <details class="dropdown agent-dropdown">
+          <summary>${agent ? `${agent.startingFaction ? icon(FACTIONS, agent.startingFaction) + ' ' : ''}${agent.symbol} &mdash; ${agent.credits?.toLocaleString() ?? '?'}c` : ''}</summary>
+          <ul>
+            <li><a href="#" id="logout-btn">Logout</a></li>
+          </ul>
+        </details>
+      </li>
     </ul>
   `;
 

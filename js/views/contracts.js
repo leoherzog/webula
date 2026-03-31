@@ -1,7 +1,8 @@
 import { endpoints } from '../api.js';
-import { getMain, withLoading } from '../components/loading.js';
+import { getMain, withLoading, systemFromWaypoint } from '../components/loading.js';
 import { renderPagination } from '../components/pagination.js';
 import { icon, FACTIONS } from '../icons.js';
+import { startRefresh } from '../refresh.js';
 
 function formatDate(iso) {
   return new Date(iso).toLocaleString();
@@ -28,22 +29,25 @@ export async function render(params, page = 1) {
 
     // Desktop table
     let table = `
-      <table class="responsive-table">
-        <thead>
-          <tr>
-            <th>Type</th><th>Faction</th><th>Status</th>
-            <th>Deadline</th><th>Payment</th><th>Deliveries</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${contracts.map(c => renderContractRow(c)).join('')}
-        </tbody>
-      </table>
+      <div class="overflow-auto">
+        <table class="responsive-table">
+          <thead>
+            <tr>
+              <th>Type</th><th>Faction</th><th>Status</th>
+              <th>Deadline</th><th>Payment</th><th>Deliveries</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${contracts.map(c => renderContractRow(c)).join('')}
+          </tbody>
+        </table>
+      </div>
     `;
 
     main.innerHTML += cards + table;
     renderPagination(main, meta, (p) => render(params, p));
   });
+  startRefresh(() => render(params, page));
 }
 
 function statusText(c) {
@@ -56,7 +60,7 @@ function renderDeliveries(deliveries) {
   if (!deliveries || deliveries.length === 0) return '-';
   return deliveries.map(d => `
     <div class="delivery-progress">
-      <span>${d.tradeSymbol}</span>
+      <span>${d.tradeSymbol} &rarr; <a href="#/system/${systemFromWaypoint(d.destinationSymbol)}/waypoint/${d.destinationSymbol}">${d.destinationSymbol}</a></span>
       <progress value="${d.unitsFulfilled}" max="${d.unitsRequired}"></progress>
       <small>${d.unitsFulfilled}/${d.unitsRequired}</small>
     </div>

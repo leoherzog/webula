@@ -35,6 +35,7 @@ async function request(method, path, { body, params, _retries = 3 } = {}) {
     return request(method, path, { body, params, _retries: _retries - 1 });
   }
 
+  if (res.status === 204) return { data: null };
   const json = await res.json();
   if (!res.ok) throw new ApiError(res.status, json);
   return json;
@@ -56,11 +57,20 @@ export const endpoints = {
   myShips: (page) => fetchPage('/my/ships', page),
   shipDetail: (symbol) => api.get(`/my/ships/${symbol}`),
   shipCargo: (symbol) => api.get(`/my/ships/${symbol}/cargo`),
+  shipCooldown: (symbol) => api.get(`/my/ships/${symbol}/cooldown`),
   myContracts: (page) => fetchPage('/my/contracts', page),
   systemDetail: (system) => api.get(`/systems/${system}`),
   systemWaypoints: (system, page) => fetchPage(`/systems/${system}/waypoints`, page),
+  waypointDetail: (system, waypoint) =>
+    api.get(`/systems/${system}/waypoints/${waypoint}`),
   waypointMarket: (system, waypoint) =>
     api.get(`/systems/${system}/waypoints/${waypoint}/market`),
+  waypointShipyard: (system, waypoint) =>
+    api.get(`/systems/${system}/waypoints/${waypoint}/shipyard`),
+  waypointJumpGate: (system, waypoint) =>
+    api.get(`/systems/${system}/waypoints/${waypoint}/jump-gate`),
+  waypointConstruction: (system, waypoint) =>
+    api.get(`/systems/${system}/waypoints/${waypoint}/construction`),
   factions: (page) => fetchPage('/factions', page),
   register: (symbol, faction) => api.post('/register', { symbol, faction }),
 };

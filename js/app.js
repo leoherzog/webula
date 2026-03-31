@@ -9,6 +9,7 @@ import { render as fleetView } from './views/fleet.js';
 import { render as shipDetailView } from './views/ship-detail.js';
 import { render as contractsView } from './views/contracts.js';
 import { render as systemView } from './views/system.js';
+import { render as waypointDetailView } from './views/waypoint-detail.js';
 
 function guard(viewFn) {
   return (params) => {
@@ -28,6 +29,7 @@ addRoute('/fleet/:shipSymbol', guard(shipDetailView));
 addRoute('/contracts', guard(contractsView));
 addRoute('/system', guard(systemView));
 addRoute('/system/:systemSymbol', guard(systemView));
+addRoute('/system/:systemSymbol/waypoint/:waypointSymbol', guard(waypointDetailView));
 
 iconsReady.then(() => {
   if (!getToken() && !window.location.hash.startsWith('#/login')) {

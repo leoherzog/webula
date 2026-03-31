@@ -1,3 +1,5 @@
+import { isRefreshing } from '../refresh.js';
+
 export function getMain() {
   return document.getElementById('app-main');
 }
@@ -19,11 +21,12 @@ export function showError(el, error) {
 }
 
 export async function withLoading(el, fn) {
-  showLoading(el);
+  const quiet = isRefreshing();
+  if (!quiet) showLoading(el);
   try {
     await fn();
   } catch (err) {
-    showError(el, err);
+    if (!quiet || err.status === 401) showError(el, err);
   } finally {
     el.removeAttribute('aria-busy');
   }

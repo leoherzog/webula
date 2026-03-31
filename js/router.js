@@ -1,3 +1,5 @@
+import { stopRefresh } from './refresh.js';
+
 const routes = [];
 
 export function addRoute(pattern, handler) {
@@ -23,6 +25,7 @@ export function currentPath() {
 
 export function start(fallback) {
   const resolve = () => {
+    stopRefresh();
     const path = currentPath();
     for (const route of routes) {
       const match = path.match(route.regex);

@@ -2,6 +2,7 @@ import { endpoints } from '../api.js';
 import { setAgent, addDiscoveredSystem } from '../state.js';
 import { getMain, withLoading, systemFromWaypoint } from '../components/loading.js';
 import { icon, FACTIONS } from '../icons.js';
+import { startRefresh } from '../refresh.js';
 
 export async function render() {
   const main = getMain();
@@ -20,7 +21,7 @@ export async function render() {
           <dl>
             <dt>Symbol</dt><dd>${agent.symbol}</dd>
             <dt>Faction</dt><dd>${icon(FACTIONS, agent.startingFaction)} ${agent.startingFaction}</dd>
-            <dt>Headquarters</dt><dd><a href="#/system/${system}">${agent.headquarters}</a></dd>
+            <dt>Headquarters</dt><dd><a href="#/system/${system}/waypoint/${agent.headquarters}">${agent.headquarters}</a></dd>
           </dl>
         </article>
         <article>
@@ -34,4 +35,5 @@ export async function render() {
       <div id="dashboard-actions"></div>
     `;
   });
+  startRefresh(() => render());
 }

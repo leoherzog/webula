@@ -1,12 +1,17 @@
 import { endpoints } from '../api.js';
 import { addDiscoveredSystem } from '../state.js';
-import { getMain, withLoading, navStatusLabel } from '../components/loading.js';
+import { getMain, withLoading, navStatusLabel, systemFromWaypoint } from '../components/loading.js';
 import { icon, SHIP_FRAMES } from '../icons.js';
+import { startRefresh } from '../refresh.js';
+import { animateCountdowns } from '../components/countdown.js';
 
 export async function render({ shipSymbol }) {
   const main = getMain();
   await withLoading(main, async () => {
-    const { data: ship } = await endpoints.shipDetail(shipSymbol);
+    const [{ data: ship }, { data: cooldown }] = await Promise.all([
+      endpoints.shipDetail(shipSymbol),
+      endpoints.shipCooldown(shipSymbol),
+    ]);
     addDiscoveredSystem(ship.nav.systemSymbol);
 
     const cargoRows = ship.cargo.inventory.map(item =>
@@ -23,33 +28,65 @@ export async function render({ shipSymbol }) {
 
     const nav = ship.nav;
     const isTransit = nav.status === 'IN_TRANSIT';
-    const arrival = isTransit ? new Date(nav.route.arrival).toLocaleString() : null;
+
+    const transitHtml = isTransit ? `
+      <dt>Origin</dt><dd><a href="#/system/${systemFromWaypoint(nav.route.origin.symbol)}/waypoint/${nav.route.origin.symbol}">${nav.route.origin.symbol}</a></dd>
+      <dt>Destination</dt><dd><a href="#/system/${systemFromWaypoint(nav.route.destination.symbol)}/waypoint/${nav.route.destination.symbol}">${nav.route.destination.symbol}</a></dd>
+      <dt>Transit</dt>
+      <dd class="countdown-bar">
+        <progress class="transit" value="0" max="1"
+          data-departure="${nav.route.departureTime}"
+          data-arrival="${nav.route.arrival}"
+          data-countdown-id="transit-${shipSymbol}">
+        </progress>
+        <span data-countdown-text="transit-${shipSymbol}"></span>
+      </dd>
+    ` : '';
+
+    const cooldownHtml = cooldown ? `
+      <dl>
+        <dt>Cooldown</dt>
+        <dd class="countdown-bar">
+          <progress class="cooldown" value="0" max="1"
+            data-expiration="${cooldown.expiration}"
+            data-total-seconds="${cooldown.totalSeconds}"
+            data-countdown-id="cooldown-${shipSymbol}">
+          </progress>
+          <span data-countdown-text="cooldown-${shipSymbol}"></span>
+        </dd>
+      </dl>
+    ` : '';
 
     main.innerHTML = `
-      <h2>
-        <a href="#/fleet">&larr; Fleet</a> / ${icon(SHIP_FRAMES, ship.frame.symbol)} ${ship.symbol}
-      </h2>
+      <nav aria-label="breadcrumb">
+        <ul>
+          <li><a href="#/fleet">Fleet</a></li>
+          <li>${icon(SHIP_FRAMES, ship.frame.symbol)} ${ship.symbol}</li>
+        </ul>
+      </nav>
 
       <div class="grid">
         <article>
           <header>Navigation</header>
           <dl>
             <dt>Status</dt><dd>${navStatusLabel(nav.status)}</dd>
-            <dt>Location</dt><dd>${nav.waypointSymbol}</dd>
+            <dt>Location</dt><dd><a href="#/system/${nav.systemSymbol}/waypoint/${nav.waypointSymbol}">${nav.waypointSymbol}</a></dd>
             <dt>System</dt><dd><a href="#/system/${nav.systemSymbol}">${nav.systemSymbol}</a></dd>
             <dt>Flight Mode</dt><dd>${nav.flightMode}</dd>
-            ${isTransit ? `
-              <dt>Origin</dt><dd>${nav.route.origin.symbol}</dd>
-              <dt>Destination</dt><dd>${nav.route.destination.symbol}</dd>
-              <dt>Arrival</dt><dd>${arrival}</dd>
-            ` : ''}
+            ${transitHtml}
           </dl>
         </article>
 
         <article>
-          <header>Fuel</header>
-          <progress value="${ship.fuel.current}" max="${ship.fuel.capacity}"></progress>
-          <p>${ship.fuel.current} / ${ship.fuel.capacity}</p>
+          <header>Status</header>
+          <dl>
+            <dt>Fuel</dt>
+            <dd>
+              <progress value="${ship.fuel.current}" max="${ship.fuel.capacity}"></progress>
+              ${ship.fuel.current} / ${ship.fuel.capacity}
+            </dd>
+          </dl>
+          ${cooldownHtml}
         </article>
       </div>
 
@@ -113,5 +150,8 @@ export async function render({ shipSymbol }) {
 
       <section id="ship-actions"></section>
     `;
+
+    animateCountdowns();
   });
+  startRefresh(() => render({ shipSymbol }));
 }

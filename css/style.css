@@ -18,6 +18,25 @@ dl progress,
   vertical-align: middle;
 }
 
+/* Inline progress bars — countdown timers and delivery tracking */
+.countdown-bar,
+.delivery-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.countdown-bar progress { width: 8rem; vertical-align: middle; }
+.countdown-bar-mini progress { width: 5rem; }
+.countdown-bar [data-countdown-text] {
+  font-size: 0.85em;
+  white-space: nowrap;
+  opacity: 0.8;
+}
+.countdown-bar-mini [data-countdown-text] { font-size: 0.75em; }
+
+progress.transit  { --pico-progress-color: var(--pico-primary); }
+progress.cooldown { --pico-progress-color: var(--pico-ins-color); }
+
 /* Labels / pills — extends PicoCSS <mark> with variants */
 mark {
   border-radius: var(--pico-border-radius);
@@ -37,9 +56,6 @@ mark.primary   { background-color: var(--pico-primary-background); color: var(--
 }
 
 /* Clickable saved-token pills */
-.saved-token[role="button"] {
-  cursor: pointer;
-}
 .saved-token .remove-token {
   margin-left: 0.3em;
   opacity: 0.7;
@@ -50,16 +66,12 @@ mark.primary   { background-color: var(--pico-primary-background); color: var(--
   opacity: 1;
 }
 
-/* Contract delivery progress */
-.delivery-progress {
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
-}
-
 /* Mobile: show dropdown menu, hide desktop nav */
 .desktop-nav {
   display: none;
+}
+.mobile-nav {
+  display: flex;
 }
 
 /* Active nav link */
@@ -67,12 +79,25 @@ nav a[aria-current="page"] {
   font-weight: bold;
 }
 
+/* Agent dropdown — auto-width, right-aligned */
+nav .agent-dropdown {
+  position: static;
+}
+nav li:has(.agent-dropdown) {
+  position: relative;
+}
+nav .agent-dropdown > summary + ul {
+  width: 100%;
+  right: 0;
+  left: auto;
+}
+
 @media (min-width: 768px) {
   /* Desktop: show horizontal nav, hide dropdown */
   .desktop-nav {
     display: flex;
   }
-  nav details.dropdown {
+  .mobile-nav {
     display: none;
   }
 }

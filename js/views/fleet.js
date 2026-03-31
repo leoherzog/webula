@@ -1,8 +1,10 @@
 import { endpoints } from '../api.js';
 import { addDiscoveredSystem } from '../state.js';
-import { getMain, withLoading, navStatusLabel, systemFromWaypoint } from '../components/loading.js';
+import { getMain, withLoading, navStatusLabel } from '../components/loading.js';
 import { renderPagination } from '../components/pagination.js';
 import { icon, SHIP_FRAMES } from '../icons.js';
+import { startRefresh } from '../refresh.js';
+import { animateCountdowns } from '../components/countdown.js';
 
 export async function render(params, page = 1) {
   const main = getMain();
@@ -17,29 +19,48 @@ export async function render(params, page = 1) {
       return;
     }
 
-    const cards = ships.map(ship => `
-      <article>
-        <header>
-          <a href="#/fleet/${ship.symbol}">${icon(SHIP_FRAMES, ship.frame.symbol)} <strong>${ship.symbol}</strong></a>
-        </header>
-        <dl>
-          <dt>Role</dt><dd>${ship.registration.role}</dd>
-          <dt>Status</dt><dd>${navStatusLabel(ship.nav.status)}</dd>
-          <dt>Location</dt><dd>${ship.nav.waypointSymbol}</dd>
-          <dt>Flight</dt><dd>${ship.nav.flightMode}</dd>
-          <dt>Fuel</dt>
-          <dd>
-            <progress value="${ship.fuel.current}" max="${ship.fuel.capacity}"></progress>
-            ${ship.fuel.current}/${ship.fuel.capacity}
-          </dd>
-          <dt>Cargo</dt>
-          <dd>${ship.cargo.units}/${ship.cargo.capacity}</dd>
-        </dl>
-        <div id="ship-${ship.symbol}-actions"></div>
-      </article>
-    `).join('');
+    const cards = ships.map(ship => {
+      const isTransit = ship.nav.status === 'IN_TRANSIT';
+      const transitRow = isTransit ? `
+        <dt>Transit</dt>
+        <dd class="countdown-bar countdown-bar-mini">
+          <progress class="transit" value="0" max="1"
+            data-departure="${ship.nav.route.departureTime}"
+            data-arrival="${ship.nav.route.arrival}"
+            data-countdown-id="transit-${ship.symbol}">
+          </progress>
+          <span data-countdown-text="transit-${ship.symbol}"></span>
+        </dd>
+      ` : '';
+
+      return `
+        <article>
+          <header>
+            <a href="#/fleet/${ship.symbol}">${icon(SHIP_FRAMES, ship.frame.symbol)} <strong>${ship.symbol}</strong></a>
+          </header>
+          <dl>
+            <dt>Role</dt><dd>${ship.registration.role}</dd>
+            <dt>Status</dt><dd>${navStatusLabel(ship.nav.status)}</dd>
+            <dt>Location</dt><dd><a href="#/system/${ship.nav.systemSymbol}/waypoint/${ship.nav.waypointSymbol}">${ship.nav.waypointSymbol}</a></dd>
+            <dt>Flight</dt><dd>${ship.nav.flightMode}</dd>
+            <dt>Fuel</dt>
+            <dd>
+              <progress value="${ship.fuel.current}" max="${ship.fuel.capacity}"></progress>
+              ${ship.fuel.current}/${ship.fuel.capacity}
+            </dd>
+            <dt>Cargo</dt>
+            <dd>${ship.cargo.units}/${ship.cargo.capacity}</dd>
+            ${transitRow}
+          </dl>
+          <div id="ship-${ship.symbol}-actions"></div>
+        </article>
+      `;
+    }).join('');
 
     main.innerHTML += `<div class="grid grid-3">${cards}</div>`;
     renderPagination(main, meta, (p) => render(params, p));
+
+    animateCountdowns();
   });
+  startRefresh(() => render(params, page));
 }
