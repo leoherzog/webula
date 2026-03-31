@@ -4,6 +4,7 @@ import { getMain, withLoading, escapeHtml, systemFromWaypoint } from '../compone
 import { renderPagination } from '../components/pagination.js';
 import { icon, WAYPOINT_TYPES, FACTIONS } from '../icons.js';
 import { renderSystemMap, killMap } from '../components/system-map.js';
+import { performAction, refreshView } from '../actions.js';
 
 export async function render(params, page = 1) {
   const main = getMain();
@@ -108,6 +109,8 @@ export async function render(params, page = 1) {
     main.innerHTML += cards + table;
     renderPagination(main, meta, (p) => render(params, p));
 
+    populateNavigateShortcuts(waypoints, ships, systemSymbol);
+
     // System jump form
     main.querySelector('#system-jump').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -119,7 +122,45 @@ export async function render(params, page = 1) {
     for (const btn of main.querySelectorAll('.market-btn')) {
       btn.addEventListener('click', () => loadMarket(btn));
     }
+
+    // Delegated click handler for navigate shortcuts (on card-list, not persistent main, to avoid accumulation on refresh)
+    const cardList = main.querySelector('.card-list');
+    if (cardList) {
+      cardList.addEventListener('click', async (e) => {
+        const link = e.target.closest('[data-action="nav-to"]');
+        if (!link) return;
+        e.preventDefault();
+        const shipSymbol = link.dataset.ship;
+        const waypointSymbol = link.dataset.waypoint;
+        await performAction(link, () => endpoints.navigateShip(shipSymbol, waypointSymbol));
+        refreshView();
+      });
+    }
   });
+}
+
+function populateNavigateShortcuts(waypoints, ships, systemSymbol) {
+  const orbitShips = ships.filter(s => s.nav.status === 'IN_ORBIT');
+  if (orbitShips.length === 0) return;
+
+  for (const wp of waypoints) {
+    const container = document.getElementById(`waypoint-${wp.symbol}-actions`);
+    if (!container) continue;
+
+    const eligible = orbitShips.filter(s => s.nav.waypointSymbol !== wp.symbol);
+    if (eligible.length === 0) continue;
+
+    const shipLinks = eligible.map(s =>
+      `<li><a href="#" data-action="nav-to" data-ship="${s.symbol}" data-waypoint="${wp.symbol}">${s.symbol}</a></li>`
+    ).join('');
+
+    container.innerHTML = `
+      <details class="dropdown">
+        <summary class="outline">Navigate Here</summary>
+        <ul>${shipLinks}</ul>
+      </details>
+    `;
+  }
 }
 
 async function loadMarket(btn) {

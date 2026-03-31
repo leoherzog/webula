@@ -4,6 +4,7 @@ import { getMain, withLoading, navStatusLabel, systemFromWaypoint } from '../com
 import { icon, SHIP_FRAMES } from '../icons.js';
 import { startRefresh } from '../refresh.js';
 import { animateCountdowns } from '../components/countdown.js';
+import { populateShipActions } from './ship-actions.js';
 
 export async function render({ shipSymbol }) {
   const main = getMain();
@@ -13,6 +14,14 @@ export async function render({ shipSymbol }) {
       endpoints.shipCooldown(shipSymbol),
     ]);
     addDiscoveredSystem(ship.nav.systemSymbol);
+
+    let waypoint = null;
+    if (ship.nav.status !== 'IN_TRANSIT') {
+      try {
+        const { data: wp } = await endpoints.waypointDetail(ship.nav.systemSymbol, ship.nav.waypointSymbol);
+        waypoint = wp;
+      } catch { /* ignore - waypoint data is supplementary */ }
+    }
 
     const cargoRows = ship.cargo.inventory.map(item =>
       `<tr><td>${item.symbol}</td><td>${item.name}</td><td>${item.units}</td></tr>`
@@ -75,6 +84,7 @@ export async function render({ shipSymbol }) {
             <dt>Flight Mode</dt><dd>${nav.flightMode}</dd>
             ${transitHtml}
           </dl>
+          <div id="nav-actions"></div>
         </article>
 
         <article>
@@ -87,6 +97,7 @@ export async function render({ shipSymbol }) {
             </dd>
           </dl>
           ${cooldownHtml}
+          <div id="status-actions"></div>
         </article>
       </div>
 
@@ -117,7 +128,7 @@ export async function render({ shipSymbol }) {
         </article>
       </div>
 
-      <article>
+      <article id="cargo-section">
         <header>Cargo (${ship.cargo.units}/${ship.cargo.capacity})</header>
         <div class="overflow-auto">
           <table>
@@ -152,6 +163,7 @@ export async function render({ shipSymbol }) {
     `;
 
     animateCountdowns();
+    populateShipActions(ship, cooldown, waypoint);
   });
   startRefresh(() => render({ shipSymbol }));
 }

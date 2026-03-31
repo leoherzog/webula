@@ -3,6 +3,7 @@ import { getMain, withLoading, systemFromWaypoint } from '../components/loading.
 import { renderPagination } from '../components/pagination.js';
 import { icon, FACTIONS } from '../icons.js';
 import { startRefresh } from '../refresh.js';
+import { performAction, openFormDialog, confirmAction, refreshView, showToast } from '../actions.js';
 
 function formatDate(iso) {
   return new Date(iso).toLocaleString();
@@ -13,7 +14,12 @@ export async function render(params, page = 1) {
   await withLoading(main, async () => {
     const { data: contracts, meta } = await endpoints.myContracts(page);
 
-    main.innerHTML = '<h2>Contracts</h2>';
+    main.innerHTML = `
+      <header class="page-header">
+        <h2>Contracts</h2>
+        <button class="outline" data-action="negotiate"><span class="mobile-nav">+ New</span><span class="desktop-nav">Negotiate New Contract</span></button>
+      </header>
+    `;
 
     if (contracts.length === 0) {
       main.innerHTML += '<p>No contracts found.</p>';
@@ -35,6 +41,7 @@ export async function render(params, page = 1) {
             <tr>
               <th>Type</th><th>Faction</th><th>Status</th>
               <th>Deadline</th><th>Payment</th><th>Deliveries</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -45,9 +52,149 @@ export async function render(params, page = 1) {
     `;
 
     main.innerHTML += cards + table;
+
+    // Populate action areas for each contract
+    for (const c of contracts) {
+      const actionEls = main.querySelectorAll(`.contract-actions[data-contract-id="${c.id}"]`);
+      const html = renderActions(c);
+      for (const el of actionEls) {
+        el.innerHTML = html;
+      }
+    }
+
     renderPagination(main, meta, (p) => render(params, p));
+
+    // Delegated click handler for action buttons (on cards+table, not persistent main, to avoid accumulation on refresh)
+    const cardList = main.querySelector('.card-list');
+    const tableEl = main.querySelector('.responsive-table');
+    if (cardList) cardList.addEventListener('click', handleActionClick);
+    if (tableEl) tableEl.addEventListener('click', handleActionClick);
+    // Negotiate button is separate
+    const negBtn = main.querySelector('[data-action="negotiate"]');
+    if (negBtn) negBtn.addEventListener('click', () => handleNegotiate(negBtn));
   });
   startRefresh(() => render(params, page));
+}
+
+function handleActionClick(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+
+  const action = btn.dataset.action;
+  const contractId = btn.dataset.contractId;
+
+  if (action === 'negotiate') {
+    return; // handled by direct listener
+  } else if (action === 'accept') {
+    handleAccept(btn, contractId);
+  } else if (action === 'deliver') {
+    handleDeliver(btn, contractId, btn.dataset.tradeSymbol, parseInt(btn.dataset.remaining, 10));
+  } else if (action === 'fulfill') {
+    handleFulfill(btn, contractId);
+  }
+}
+
+async function handleNegotiate(btn) {
+  try {
+    const { data: ships } = await endpoints.myShips(1);
+    if (!ships || ships.length === 0) {
+      showToast('No ships available', 'del');
+      return;
+    }
+    const options = ships.map(s => `<option value="${s.symbol}">${s.symbol}</option>`).join('');
+    openFormDialog('Negotiate Contract', `
+      <label>Ship
+        <select name="shipSymbol" required>${options}</select>
+      </label>
+    `, async (formData) => {
+      const shipSymbol = formData.get('shipSymbol');
+      await performAction(btn, () => endpoints.negotiateContract(shipSymbol));
+      refreshView();
+    });
+  } catch (err) {
+    showToast(err.message, 'del');
+  }
+}
+
+async function handleAccept(btn, contractId) {
+  const onAccepted = btn.dataset.onAccepted || '0';
+  const onFulfilled = btn.dataset.onFulfilled || '0';
+  const confirmed = await confirmAction(
+    `Accept this contract?<br><br>Payment on accept: <strong>${onAccepted}c</strong><br>Payment on fulfill: <strong>${onFulfilled}c</strong>`
+  );
+  if (!confirmed) return;
+  try {
+    await performAction(btn, () => endpoints.acceptContract(contractId));
+    refreshView();
+  } catch {
+    // performAction already toasts on error
+  }
+}
+
+async function handleDeliver(btn, contractId, tradeSymbol, remaining) {
+  try {
+    const { data: ships } = await endpoints.myShips(1);
+    if (!ships || ships.length === 0) {
+      showToast('No ships available', 'del');
+      return;
+    }
+    const options = ships.map(s => `<option value="${s.symbol}">${s.symbol}</option>`).join('');
+    openFormDialog(`Deliver ${tradeSymbol}`, `
+      <label>Ship
+        <select name="shipSymbol" required>${options}</select>
+      </label>
+      <label>Units
+        <input type="number" name="units" min="1" max="${remaining}" value="${remaining}" required>
+      </label>
+    `, async (formData) => {
+      const shipSymbol = formData.get('shipSymbol');
+      const units = parseInt(formData.get('units'), 10);
+      await performAction(btn, () => endpoints.deliverContract(contractId, { shipSymbol, tradeSymbol, units }));
+      refreshView();
+    });
+  } catch (err) {
+    showToast(err.message, 'del');
+  }
+}
+
+async function handleFulfill(btn, contractId) {
+  try {
+    await performAction(btn, () => endpoints.fulfillContract(contractId));
+    refreshView();
+  } catch {
+    // performAction already toasts on error
+  }
+}
+
+function renderActions(c) {
+  const terms = c.terms;
+
+  if (c.fulfilled) {
+    return '<mark class="ins">Completed</mark>';
+  }
+
+  if (!c.accepted) {
+    const onAccepted = terms.payment.onAccepted?.toLocaleString() ?? '0';
+    const onFulfilled = terms.payment.onFulfilled?.toLocaleString() ?? '0';
+    return `<button data-action="accept" data-contract-id="${c.id}" data-on-accepted="${onAccepted}" data-on-fulfilled="${onFulfilled}">Accept</button>`;
+  }
+
+  // Accepted but not fulfilled
+  const deliveries = terms.deliver || [];
+  const allComplete = deliveries.every(d => d.unitsFulfilled >= d.unitsRequired);
+
+  if (allComplete) {
+    return `<button data-action="fulfill" data-contract-id="${c.id}" class="outline">Fulfill</button>`;
+  }
+
+  // Show deliver button for each incomplete delivery
+  return deliveries
+    .filter(d => d.unitsFulfilled < d.unitsRequired)
+    .map(d => {
+      const remaining = d.unitsRequired - d.unitsFulfilled;
+      return `<button data-action="deliver" data-contract-id="${c.id}" data-trade-symbol="${d.tradeSymbol}" data-remaining="${remaining}" class="outline secondary">Deliver ${d.tradeSymbol} (${remaining})</button>`;
+    })
+    .join(' ');
 }
 
 function statusText(c) {
@@ -86,7 +233,7 @@ function renderContractCard(c) {
         <dt>Deliveries</dt>
         <dd>${renderDeliveries(terms.deliver)}</dd>
       </dl>
-      <div id="contract-${c.id}-actions"></div>
+      <div class="contract-actions" data-contract-id="${c.id}"></div>
     </article>
   `;
 }
@@ -101,6 +248,7 @@ function renderContractRow(c) {
       <td>${formatDate(terms.deadline)}</td>
       <td>${terms.payment.onAccepted?.toLocaleString() ?? 0} / ${terms.payment.onFulfilled?.toLocaleString() ?? 0}</td>
       <td>${renderDeliveries(terms.deliver)}</td>
+      <td class="contract-actions" data-contract-id="${c.id}"></td>
     </tr>
   `;
 }

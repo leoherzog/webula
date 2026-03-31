@@ -124,15 +124,13 @@ export function renderSystemMap(container, systemData, ships) {
     stagePadding: 40,
   });
 
-  // Click: scroll to waypoint in list below, or navigate to ship detail
+  // Click: navigate to waypoint detail or ship detail
   activeSigma.on('clickNode', ({ node }) => {
     const attrs = graph.getNodeAttributes(node);
     if (attrs.nodeType === 'ship') {
       window.location.hash = `#/fleet/${node}`;
     } else {
-      const el = document.getElementById(`waypoint-${node}-actions`)
-        || document.getElementById(`market-${node}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      window.location.hash = `#/system/${systemData.symbol}/waypoint/${node}`;
     }
   });
 

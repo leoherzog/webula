@@ -3,6 +3,7 @@ import { addDiscoveredSystem } from '../state.js';
 import { getMain, withLoading, escapeHtml, systemFromWaypoint } from '../components/loading.js';
 import { icon, WAYPOINT_TYPES, FACTIONS } from '../icons.js';
 import { startRefresh } from '../refresh.js';
+import { performAction, confirmAction, openFormDialog, refreshView, showToast } from '../actions.js';
 
 export async function render({ systemSymbol, waypointSymbol }) {
   const main = getMain();
@@ -94,9 +95,9 @@ export async function render({ systemSymbol, waypointSymbol }) {
       ` : ''}
 
       ${shipyardRes ? `
-        <article>
+        <article id="shipyard-section">
           <header>Shipyard</header>
-          ${renderShipyardData(shipyardRes.data)}
+          ${renderShipyardData(shipyardRes.data, waypointSymbol)}
         </article>
       ` : ''}
 
@@ -108,14 +109,80 @@ export async function render({ systemSymbol, waypointSymbol }) {
       ` : ''}
 
       ${constructionRes ? `
-        <article>
+        <article id="construction-section">
           <header>Construction ${constructionRes.data.isComplete ? '<mark class="ins">Complete</mark>' : '<mark>In Progress</mark>'}</header>
-          ${renderConstructionData(constructionRes.data)}
+          ${renderConstructionData(constructionRes.data, systemSymbol, waypointSymbol)}
         </article>
       ` : ''}
 
       <section id="waypoint-actions"></section>
     `;
+
+    // Attach shipyard buy handlers
+    if (shipyardRes) {
+      const section = document.getElementById('shipyard-section');
+      if (section) {
+        for (const btn of section.querySelectorAll('.buy-ship-btn')) {
+          btn.addEventListener('click', async () => {
+            const type = btn.dataset.type;
+            const price = btn.dataset.price;
+            const wp = btn.dataset.waypoint;
+            const confirmed = await confirmAction(`Purchase ${type} for ${Number(price).toLocaleString()}c?`);
+            if (!confirmed) return;
+            try {
+              await performAction(btn, () => endpoints.purchaseShip(type, wp));
+              refreshView();
+            } catch { /* error handled by performAction */ }
+          });
+        }
+      }
+    }
+
+    // Attach construction supply handlers
+    if (constructionRes) {
+      const section = document.getElementById('construction-section');
+      if (section) {
+        for (const btn of section.querySelectorAll('.supply-btn')) {
+          btn.addEventListener('click', async () => {
+            const trade = btn.dataset.trade;
+            const sys = btn.dataset.system;
+            const wp = btn.dataset.waypoint;
+
+            // Fetch ships for the selector
+            let ships = [];
+            try {
+              const res = await endpoints.myShips(1);
+              ships = res.data || [];
+            } catch { /* ignore */ }
+
+            if (ships.length === 0) {
+              showToast('No ships available', 'del');
+              return;
+            }
+
+            const shipOptions = ships.map(s =>
+              `<option value="${s.symbol}">${s.symbol} (${s.nav.status} @ ${s.nav.waypointSymbol})</option>`
+            ).join('');
+
+            openFormDialog(
+              `Supply ${trade}`,
+              `<label>Ship
+                <select name="shipSymbol" required>${shipOptions}</select>
+              </label>
+              <label>Units
+                <input type="number" name="units" min="1" value="1" required>
+              </label>`,
+              async (formData) => {
+                const shipSymbol = formData.get('shipSymbol');
+                const units = parseInt(formData.get('units'), 10);
+                await performAction(btn, () => endpoints.supplyConstruction(sys, wp, { shipSymbol, tradeSymbol: trade, units }));
+                refreshView();
+              }
+            );
+          });
+        }
+      }
+    }
   });
   startRefresh(() => render({ systemSymbol, waypointSymbol }));
 }
@@ -154,7 +221,7 @@ function renderMarketData(market) {
   `;
 }
 
-function renderShipyardData(shipyard) {
+function renderShipyardData(shipyard, waypointSymbol) {
   const typeBadges = shipyard.shipTypes.map(st =>
     `<mark class="secondary">${escapeHtml(st.type)}</mark>`
   ).join('');
@@ -165,7 +232,7 @@ function renderShipyardData(shipyard) {
       <div class="overflow-auto">
         <table>
           <thead>
-            <tr><th>Name</th><th>Type</th><th>Supply</th><th>Activity</th><th>Price</th></tr>
+            <tr><th>Name</th><th>Type</th><th>Supply</th><th>Activity</th><th>Price</th><th></th></tr>
           </thead>
           <tbody>
             ${shipyard.ships.map(s => `
@@ -175,6 +242,7 @@ function renderShipyardData(shipyard) {
                 <td>${s.supply}</td>
                 <td>${s.activity || '-'}</td>
                 <td>${s.purchasePrice.toLocaleString()}c</td>
+                <td><button class="outline buy-ship-btn" data-type="${s.type}" data-price="${s.purchasePrice}" data-waypoint="${waypointSymbol}">Buy</button></td>
               </tr>
             `).join('')}
           </tbody>
@@ -204,11 +272,11 @@ function renderJumpGateData(jumpGate) {
   `;
 }
 
-function renderConstructionData(construction) {
+function renderConstructionData(construction, systemSymbol, waypointSymbol) {
   return `
     <div class="overflow-auto">
       <table>
-        <thead><tr><th>Material</th><th>Progress</th><th>Required</th></tr></thead>
+        <thead><tr><th>Material</th><th>Progress</th><th>Required</th><th></th></tr></thead>
         <tbody>
           ${construction.materials.map(m => `
             <tr>
@@ -220,6 +288,7 @@ function renderConstructionData(construction) {
                 </div>
               </td>
               <td>${m.required}</td>
+              <td><button class="outline supply-btn" data-trade="${m.tradeSymbol}" data-system="${systemSymbol}" data-waypoint="${waypointSymbol}">Supply</button></td>
             </tr>
           `).join('')}
         </tbody>

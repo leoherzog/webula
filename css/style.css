@@ -1,3 +1,21 @@
+/* Page header — title + inline action button */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.page-header {
+  margin-bottom: var(--pico-spacing);
+}
+.page-header h2 {
+  margin-bottom: 0;
+}
+.page-header button {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
 /* Definition lists — PicoCSS does not style dt/dd */
 dl {
   display: grid;
@@ -124,4 +142,84 @@ nav .agent-dropdown > summary + ul {
   .grid-3 {
     grid-template-columns: repeat(3, 1fr);
   }
+}
+
+/* Toast notifications */
+.toast-container {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--pico-border-radius);
+  color: var(--pico-primary-inverse);
+  background-color: var(--pico-primary-background);
+  font-size: 0.9em;
+  pointer-events: auto;
+  animation: toast-in 0.3s ease-out;
+}
+
+.toast-ins {
+  background-color: var(--pico-ins-color);
+}
+
+.toast-del {
+  background-color: var(--pico-del-color);
+}
+
+.toast-out {
+  animation: toast-out 0.3s ease-in forwards;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+}
+
+/* Action button groups — wrapping flex layout */
+.action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.action-group button {
+  font-size: 0.85em;
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 0;
+}
+
+/* Danger button variant */
+button.danger {
+  --pico-background-color: var(--pico-del-color);
+  --pico-border-color: var(--pico-del-color);
+  --pico-color: var(--pico-primary-inverse);
+}
+
+button.danger:hover {
+  opacity: 0.85;
 }

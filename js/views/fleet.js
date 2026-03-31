@@ -5,6 +5,8 @@ import { renderPagination } from '../components/pagination.js';
 import { icon, SHIP_FRAMES } from '../icons.js';
 import { startRefresh } from '../refresh.js';
 import { animateCountdowns } from '../components/countdown.js';
+import { performAction, openFormDialog, refreshView } from '../actions.js';
+import { fetchAllPages } from '../api.js';
 
 export async function render(params, page = 1) {
   const main = getMain();
@@ -61,6 +63,77 @@ export async function render(params, page = 1) {
     renderPagination(main, meta, (p) => render(params, p));
 
     animateCountdowns();
+    populateFleetActions(ships);
+
+    // Delegated click handler on the grid container
+    const grid = main.querySelector('.grid.grid-3');
+    if (grid) {
+      grid.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        const symbol = btn.dataset.ship;
+
+        if (action === 'orbit') {
+          await performAction(btn, () => endpoints.orbitShip(symbol));
+          refreshView();
+        } else if (action === 'dock') {
+          await performAction(btn, () => endpoints.dockShip(symbol));
+          refreshView();
+        } else if (action === 'navigate') {
+          const systemSymbol = btn.dataset.system;
+          const currentWp = btn.dataset.waypoint;
+          const dialog = openFormDialog(
+            'Navigate Ship',
+            `<label>Destination
+              <select name="waypointSymbol" required aria-busy="true" disabled>
+                <option value="">Loading waypoints…</option>
+              </select>
+            </label>`,
+            async (formData) => {
+              const waypointSymbol = formData.get('waypointSymbol');
+              await performAction(btn, () => endpoints.navigateShip(symbol, waypointSymbol));
+              refreshView();
+            }
+          );
+          const select = dialog.querySelector('select[name="waypointSymbol"]');
+          const confirmBtn = dialog.querySelector('.confirm-btn');
+          confirmBtn.disabled = true;
+          const waypoints = await fetchAllPages(`/systems/${systemSymbol}/waypoints`);
+          const options = waypoints
+            .filter(w => w.symbol !== currentWp)
+            .sort((a, b) => a.symbol.localeCompare(b.symbol))
+            .map(w => `<option value="${w.symbol}">${w.symbol} (${w.type})</option>`)
+            .join('');
+          select.innerHTML = options;
+          select.removeAttribute('aria-busy');
+          select.disabled = false;
+          confirmBtn.disabled = false;
+        }
+      });
+    }
   });
   startRefresh(() => render(params, page));
+}
+
+function populateFleetActions(ships) {
+  for (const ship of ships) {
+    const container = document.getElementById(`ship-${ship.symbol}-actions`);
+    if (!container) continue;
+
+    const status = ship.nav.status;
+
+    if (status === 'DOCKED') {
+      container.innerHTML = `
+        <button class="outline" data-action="orbit" data-ship="${ship.symbol}">Orbit</button>
+      `;
+    } else if (status === 'IN_ORBIT') {
+      container.innerHTML = `
+        <button data-action="dock" data-ship="${ship.symbol}">Dock</button>
+        <button class="secondary" data-action="navigate" data-ship="${ship.symbol}" data-system="${ship.nav.systemSymbol}" data-waypoint="${ship.nav.waypointSymbol}">Navigate</button>
+      `;
+    }
+    // IN_TRANSIT: no buttons
+  }
 }
