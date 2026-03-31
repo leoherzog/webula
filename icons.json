@@ -1,73 +1,262 @@
 {
   "shipFrames": {
-    "_default":               { "icon": "fa-shuttle-space",               "color": "pico-color-primary" },
-    "FRAME_PROBE":            { "icon": "fa-drone",                       "color": "pico-color-azure-250" },
-    "FRAME_DRONE":            { "icon": "fa-drone-front",                 "color": "pico-color-grey-350" },
-    "FRAME_INTERCEPTOR":      { "icon": "fa-starfighter",                 "color": "pico-color-red-450" },
-    "FRAME_RACER":            { "icon": "fa-gauge-high",                  "color": "pico-color-amber-200" },
-    "FRAME_FIGHTER":          { "icon": "fa-starfighter-twin-ion-engine", "color": "pico-color-jade-300" },
-    "FRAME_FRIGATE":          { "icon": "fa-swords",                      "color": "pico-color-azure-250" },
-    "FRAME_SHUTTLE":          { "icon": "fa-shuttle-space",               "color": "pico-color-azure-400" },
-    "FRAME_EXPLORER":         { "icon": "fa-compass",                     "color": "pico-color-jade-200" },
-    "FRAME_MINER":            { "icon": "fa-pickaxe",                     "color": "pico-color-amber-250" },
-    "FRAME_LIGHT_FREIGHTER":  { "icon": "fa-starship-freighter",          "color": "pico-color-sand-200" },
-    "FRAME_HEAVY_FREIGHTER":  { "icon": "fa-starship-freighter",          "color": "pico-color-amber-400" },
-    "FRAME_TRANSPORT":        { "icon": "fa-truck-ramp-box",              "color": "pico-color-slate-350" },
-    "FRAME_DESTROYER":        { "icon": "fa-crosshairs",                  "color": "pico-color-red-400" },
-    "FRAME_CRUISER":          { "icon": "fa-starship",                    "color": "pico-color-indigo-500" },
-    "FRAME_CARRIER":          { "icon": "fa-starship",                    "color": "pico-color-purple-250" },
-    "FRAME_BULK_FREIGHTER":   { "icon": "fa-warehouse",                   "color": "pico-color-sand-500" }
+    "_default": {
+      "icon": "fa-shuttle-space",
+      "color": "pico-color-primary"
+    },
+    "FRAME_PROBE": {
+      "icon": "fa-drone",
+      "color": "pico-color-azure-250"
+    },
+    "FRAME_DRONE": {
+      "icon": "fa-drone-front",
+      "color": "pico-color-grey-350"
+    },
+    "FRAME_INTERCEPTOR": {
+      "icon": "fa-starfighter",
+      "color": "pico-color-red-450"
+    },
+    "FRAME_RACER": {
+      "icon": "fa-gauge-high",
+      "color": "pico-color-amber-200"
+    },
+    "FRAME_FIGHTER": {
+      "icon": "fa-starfighter-twin-ion-engine",
+      "color": "pico-color-jade-300"
+    },
+    "FRAME_FRIGATE": {
+      "icon": "fa-swords",
+      "color": "pico-color-azure-250"
+    },
+    "FRAME_SHUTTLE": {
+      "icon": "fa-shuttle-space",
+      "color": "pico-color-azure-400"
+    },
+    "FRAME_EXPLORER": {
+      "icon": "fa-compass",
+      "color": "pico-color-jade-200"
+    },
+    "FRAME_MINER": {
+      "icon": "fa-pickaxe",
+      "color": "pico-color-amber-250"
+    },
+    "FRAME_LIGHT_FREIGHTER": {
+      "icon": "fa-starship-freighter",
+      "color": "pico-color-sand-200"
+    },
+    "FRAME_HEAVY_FREIGHTER": {
+      "icon": "fa-starship-freighter",
+      "color": "pico-color-amber-400"
+    },
+    "FRAME_TRANSPORT": {
+      "icon": "fa-truck-ramp-box",
+      "color": "pico-color-slate-350"
+    },
+    "FRAME_DESTROYER": {
+      "icon": "fa-crosshairs",
+      "color": "pico-color-red-400"
+    },
+    "FRAME_CRUISER": {
+      "icon": "fa-starship",
+      "color": "pico-color-indigo-500"
+    },
+    "FRAME_CARRIER": {
+      "icon": "fa-starship",
+      "color": "pico-color-purple-250"
+    },
+    "FRAME_BULK_FREIGHTER": {
+      "icon": "fa-warehouse",
+      "color": "pico-color-sand-500"
+    }
   },
   "factions": {
-    "_default":  { "icon": "fa-flag",                "color": "pico-color-primary" },
-    "COSMIC":    { "icon": "fa-star-of-life",     "color": "pico-color-violet-150" },
-    "VOID":      { "icon": "fa-circle",           "color": "pico-color-slate-800" },
-    "GALACTIC":  { "icon": "fa-hurricane",        "color": "pico-color-azure-250" },
-    "QUANTUM":   { "icon": "fa-atom",             "color": "pico-color-cyan-150" },
-    "DOMINION":  { "icon": "fa-crown",            "color": "pico-color-amber-200" },
-    "ASTRO":     { "icon": "fa-rocket",           "color": "pico-color-pumpkin-250" },
-    "CORSAIRS":  { "icon": "fa-skull-crossbones", "color": "pico-color-red-450" },
-    "OBSIDIAN":  { "icon": "fa-gem",              "color": "pico-color-slate-700" },
-    "AEGIS":     { "icon": "fa-shield-halved",    "color": "pico-color-azure-450" },
-    "UNITED":    { "icon": "fa-handshake",        "color": "pico-color-jade-350" },
-    "SOLITARY":  { "icon": "fa-moon",             "color": "pico-color-zinc-400" },
-    "COBALT":    { "icon": "fa-flask",            "color": "pico-color-blue-700" },
-    "OMEGA":     { "icon": "fa-infinity",         "color": "pico-color-purple-400" },
-    "ECHO":      { "icon": "fa-tower-broadcast",  "color": "pico-color-jade-100" },
-    "LORDS":     { "icon": "fa-chess-king",        "color": "pico-color-amber-350" },
-    "CULT":      { "icon": "fa-eye",              "color": "pico-color-purple-450" },
-    "ANCIENTS":  { "icon": "fa-ankh",             "color": "pico-color-pumpkin-200" },
-    "SHADOW":    { "icon": "fa-mask",             "color": "pico-color-slate-600" },
-    "ETHEREAL":  { "icon": "fa-ghost",            "color": "pico-color-azure-150" }
+    "_default": {
+      "icon": "fa-flag",
+      "color": "pico-color-primary"
+    },
+    "COSMIC": {
+      "icon": "fa-star-of-life",
+      "color": "pico-color-violet-150"
+    },
+    "VOID": {
+      "icon": "fa-circle",
+      "color": "pico-color-slate-800"
+    },
+    "GALACTIC": {
+      "icon": "fa-hurricane",
+      "color": "pico-color-azure-250"
+    },
+    "QUANTUM": {
+      "icon": "fa-atom",
+      "color": "pico-color-cyan-150"
+    },
+    "DOMINION": {
+      "icon": "fa-crown",
+      "color": "pico-color-amber-200"
+    },
+    "ASTRO": {
+      "icon": "fa-rocket",
+      "color": "pico-color-pumpkin-250"
+    },
+    "CORSAIRS": {
+      "icon": "fa-skull-crossbones",
+      "color": "pico-color-red-450"
+    },
+    "OBSIDIAN": {
+      "icon": "fa-gem",
+      "color": "pico-color-slate-700"
+    },
+    "AEGIS": {
+      "icon": "fa-shield-halved",
+      "color": "pico-color-azure-450"
+    },
+    "UNITED": {
+      "icon": "fa-handshake",
+      "color": "pico-color-jade-350"
+    },
+    "SOLITARY": {
+      "icon": "fa-moon",
+      "color": "pico-color-zinc-400"
+    },
+    "COBALT": {
+      "icon": "fa-flask",
+      "color": "pico-color-blue-700"
+    },
+    "OMEGA": {
+      "icon": "fa-infinity",
+      "color": "pico-color-purple-400"
+    },
+    "ECHO": {
+      "icon": "fa-tower-broadcast",
+      "color": "pico-color-jade-100"
+    },
+    "LORDS": {
+      "icon": "fa-chess-king",
+      "color": "pico-color-amber-350"
+    },
+    "CULT": {
+      "icon": "fa-eye",
+      "color": "pico-color-purple-450"
+    },
+    "ANCIENTS": {
+      "icon": "fa-ankh",
+      "color": "pico-color-pumpkin-200"
+    },
+    "SHADOW": {
+      "icon": "fa-mask",
+      "color": "pico-color-slate-600"
+    },
+    "ETHEREAL": {
+      "icon": "fa-ghost",
+      "color": "pico-color-azure-150"
+    }
   },
   "waypointTypes": {
-    "_default":                { "icon": "fa-location-dot",   "color": "pico-color-primary" },
-    "PLANET":                  { "icon": "fa-earth-americas", "color": "pico-color-azure-450" },
-    "GAS_GIANT":               { "icon": "fa-globe",          "color": "pico-color-amber-250" },
-    "MOON":                    { "icon": "fa-moon",           "color": "pico-color-zinc-250" },
-    "ORBITAL_STATION":         { "icon": "fa-satellite",      "color": "pico-color-azure-250" },
-    "JUMP_GATE":               { "icon": "fa-ring",           "color": "pico-color-purple-400" },
-    "ASTEROID":                { "icon": "fa-meteor",         "color": "pico-color-sand-400" },
-    "ASTEROID_FIELD":          { "icon": "fa-meteor",         "color": "pico-color-sand-450" },
-    "ASTEROID_BASE":           { "icon": "fa-warehouse",      "color": "pico-color-amber-300" },
-    "ENGINEERED_ASTEROID":     { "icon": "fa-gear",           "color": "pico-color-cyan-300" },
-    "NEBULA":                  { "icon": "fa-cloud",          "color": "pico-color-pink-350" },
-    "DEBRIS_FIELD":            { "icon": "fa-burst",          "color": "pico-color-red-400" },
-    "GRAVITY_WELL":            { "icon": "fa-tornado",        "color": "pico-color-violet-450" },
-    "ARTIFICIAL_GRAVITY_WELL": { "icon": "fa-circle-notch",   "color": "pico-color-jade-100" },
-    "FUEL_STATION":            { "icon": "fa-gas-pump",       "color": "pico-color-amber-150" }
+    "_default": {
+      "icon": "fa-location-dot",
+      "color": "pico-color-primary"
+    },
+    "PLANET": {
+      "icon": "fa-earth-americas",
+      "color": "pico-color-azure-450"
+    },
+    "GAS_GIANT": {
+      "icon": "fa-globe",
+      "color": "pico-color-amber-250"
+    },
+    "MOON": {
+      "icon": "fa-moon",
+      "color": "pico-color-zinc-250"
+    },
+    "ORBITAL_STATION": {
+      "icon": "fa-satellite",
+      "color": "pico-color-azure-250"
+    },
+    "JUMP_GATE": {
+      "icon": "fa-ring",
+      "color": "pico-color-purple-400"
+    },
+    "ASTEROID": {
+      "icon": "fa-meteor",
+      "color": "pico-color-sand-400"
+    },
+    "ASTEROID_FIELD": {
+      "icon": "fa-meteor",
+      "color": "pico-color-sand-450"
+    },
+    "ASTEROID_BASE": {
+      "icon": "fa-warehouse",
+      "color": "pico-color-amber-300"
+    },
+    "ENGINEERED_ASTEROID": {
+      "icon": "fa-gear",
+      "color": "pico-color-cyan-300"
+    },
+    "NEBULA": {
+      "icon": "fa-cloud",
+      "color": "pico-color-pink-350"
+    },
+    "DEBRIS_FIELD": {
+      "icon": "fa-burst",
+      "color": "pico-color-red-400"
+    },
+    "GRAVITY_WELL": {
+      "icon": "fa-tornado",
+      "color": "pico-color-violet-450"
+    },
+    "ARTIFICIAL_GRAVITY_WELL": {
+      "icon": "fa-circle-notch",
+      "color": "pico-color-jade-100"
+    },
+    "FUEL_STATION": {
+      "icon": "fa-gas-pump",
+      "color": "pico-color-amber-150"
+    }
   },
   "starTypes": {
-    "_default":      { "icon": "fa-star",            "color": "pico-color-primary" },
-    "NEUTRON_STAR":  { "icon": "fa-atom",           "color": "pico-color-slate-250" },
-    "RED_STAR":      { "icon": "fa-star",           "color": "pico-color-red-450" },
-    "ORANGE_STAR":   { "icon": "fa-star",           "color": "pico-color-orange-350" },
-    "BLUE_STAR":     { "icon": "fa-star",           "color": "pico-color-azure-300" },
-    "YOUNG_STAR":    { "icon": "fa-seedling",       "color": "pico-color-lime-150" },
-    "WHITE_DWARF":   { "icon": "fa-diamond",        "color": "pico-color-zinc-100" },
-    "BLACK_HOLE":    { "icon": "fa-circle",         "color": "pico-color-violet-750" },
-    "HYPERGIANT":    { "icon": "fa-fire",           "color": "pico-color-amber-150" },
-    "NEBULA":        { "icon": "fa-cloud",          "color": "pico-color-purple-500" },
-    "UNSTABLE":      { "icon": "fa-bolt-lightning",  "color": "pico-color-amber-200" }
+    "_default": {
+      "icon": "fa-star",
+      "color": "pico-color-primary"
+    },
+    "NEUTRON_STAR": {
+      "icon": "fa-atom",
+      "color": "pico-color-slate-250"
+    },
+    "RED_STAR": {
+      "icon": "fa-star",
+      "color": "pico-color-red-450"
+    },
+    "ORANGE_STAR": {
+      "icon": "fa-star",
+      "color": "pico-color-orange-350"
+    },
+    "BLUE_STAR": {
+      "icon": "fa-star",
+      "color": "pico-color-azure-300"
+    },
+    "YOUNG_STAR": {
+      "icon": "fa-seedling",
+      "color": "pico-color-lime-150"
+    },
+    "WHITE_DWARF": {
+      "icon": "fa-diamond",
+      "color": "pico-color-zinc-100"
+    },
+    "BLACK_HOLE": {
+      "icon": "fa-circle",
+      "color": "pico-color-violet-750"
+    },
+    "HYPERGIANT": {
+      "icon": "fa-fire",
+      "color": "pico-color-amber-150"
+    },
+    "NEBULA": {
+      "icon": "fa-cloud",
+      "color": "pico-color-purple-500"
+    },
+    "UNSTABLE": {
+      "icon": "fa-bolt-lightning",
+      "color": "pico-color-amber-200"
+    }
   }
 }

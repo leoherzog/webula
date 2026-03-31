@@ -1,5 +1,6 @@
 import { getAgent, clearToken } from '../state.js';
 import { navigate, currentPath } from '../router.js';
+import { icon, FACTIONS } from '../icons.js';
 
 const links = [
   { hash: '#/dashboard', label: 'Dashboard' },
@@ -34,7 +35,7 @@ export function renderNav() {
       ${navLinks}
     </ul>
     <ul>
-      <li>${agent ? `${agent.symbol} &mdash; ${agent.credits?.toLocaleString() ?? '?'}c` : ''}</li>
+      <li>${agent ? `${agent.startingFaction ? icon(FACTIONS, agent.startingFaction) + ' ' : ''}${agent.symbol} &mdash; ${agent.credits?.toLocaleString() ?? '?'}c` : ''}</li>
       <li><a href="#" id="logout-btn" class="secondary">Logout</a></li>
     </ul>
   `;

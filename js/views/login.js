@@ -49,6 +49,7 @@ export async function render() {
           <select name="faction" required aria-busy="true">
             <option value="">Loading factions...</option>
           </select>
+          <small id="faction-desc"></small>
         </label>
         <button type="submit">Register</button>
       </form>
@@ -65,21 +66,25 @@ export async function render() {
   const factionSelect = registerForm.elements.faction;
 
   const factionIconEl = main.querySelector('#faction-icon');
+  const factionDescEl = main.querySelector('#faction-desc');
+  let factionMap = {};
 
-  function updateFactionIcon() {
+  function updateFactionInfo() {
     const val = factionSelect.value;
     factionIconEl.innerHTML = val ? icon(FACTIONS, val) : '';
+    factionDescEl.textContent = factionMap[val] || '';
   }
 
-  factionSelect.addEventListener('change', updateFactionIcon);
+  factionSelect.addEventListener('change', updateFactionInfo);
 
   // Fetch factions in the background
   fetchAllFactions().then(factions => {
+    factionMap = Object.fromEntries(factions.map(f => [f.symbol, f.description]));
     factionSelect.removeAttribute('aria-busy');
     factionSelect.innerHTML = factions.map(f =>
-      `<option value="${f.symbol}" title="${escapeHtml(f.description)}" ${f.isRecruiting ? '' : 'disabled'}>${f.name} (${f.symbol})</option>`
+      `<option value="${f.symbol}" ${f.isRecruiting ? '' : 'disabled'}>${f.name} (${f.symbol})</option>`
     ).join('');
-    updateFactionIcon();
+    updateFactionInfo();
   }).catch(err => {
     factionSelect.removeAttribute('aria-busy');
     factionSelect.innerHTML = '<option value="">Failed to load factions</option>';
