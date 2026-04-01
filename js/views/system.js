@@ -11,7 +11,7 @@ export async function render(params, page = 1) {
   const systemSymbol = params.systemSymbol || await deriveSystem();
 
   if (!systemSymbol) {
-    main.innerHTML = '<p>No system to display. Visit the <a href="#/dashboard">Dashboard</a> first.</p>';
+    main.innerHTML = '<p>No system to display. Visit the <a href="#/fleet">Fleet</a> first.</p>';
     return;
   }
 
@@ -214,8 +214,8 @@ function renderMarketData(market) {
             <td>${g.symbol}</td>
             <td>${g.type}</td>
             <td>${g.supply}</td>
-            <td>${g.purchasePrice.toLocaleString()}</td>
-            <td>${g.sellPrice.toLocaleString()}</td>
+            <td>₵${g.purchasePrice.toLocaleString()}</td>
+            <td>₵${g.sellPrice.toLocaleString()}</td>
             <td>${g.tradeVolume}</td>
           </tr>
         `).join('')}

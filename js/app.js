@@ -5,7 +5,6 @@ import { ready as iconsReady } from './icons.js';
 import { initOffline } from './offline.js';
 
 import { render as loginView } from './views/login.js';
-import { render as dashboardView } from './views/dashboard.js';
 import { render as fleetView } from './views/fleet.js';
 import { render as shipDetailView } from './views/ship-detail.js';
 import { render as contractsView } from './views/contracts.js';
@@ -24,7 +23,6 @@ function guard(viewFn) {
 }
 
 addRoute('/login', loginView);
-addRoute('/dashboard', guard(dashboardView));
 addRoute('/fleet', guard(fleetView));
 addRoute('/fleet/:shipSymbol', guard(shipDetailView));
 addRoute('/contracts', guard(contractsView));
@@ -37,5 +35,5 @@ iconsReady.then(() => {
   if (!getToken() && !window.location.hash.startsWith('#/login')) {
     navigate('#/login');
   }
-  start(() => navigate(getToken() ? '#/dashboard' : '#/login'));
+  start(() => navigate(getToken() ? '#/fleet' : '#/login'));
 });

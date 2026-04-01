@@ -37,9 +37,8 @@ js/
     pagination.js                   # Reusable prev/next page controls
     system-map.js                   # Sigma.js system waypoint map
   views/
-    login.js                        # Token login or register new agent
-    dashboard.js                    # Agent overview: symbol, credits, faction, HQ
-    fleet.js                        # Paginated ship cards with status/fuel/cargo
+    login.js                        # Token login (bearer token + saved agents)
+    fleet.js                        # Agent dashboard + paginated ship cards
     ship-detail.js                  # Full ship info: nav, frame, reactor, cargo, modules
     contracts.js                    # Contract list (cards on mobile, table on desktop)
     system.js                       # System map + waypoint browser + market data
@@ -59,7 +58,6 @@ Hash-based SPA. Routes registered in `app.js` via `addRoute(pattern, handler)`.
 | Hash | View | Auth |
 |---|---|---|
 | `#/login` | `login.js` | No |
-| `#/dashboard` | `dashboard.js` | Yes |
 | `#/fleet` | `fleet.js` | Yes |
 | `#/fleet/:shipSymbol` | `ship-detail.js` | Yes |
 | `#/contracts` | `contracts.js` | Yes |

@@ -3,7 +3,6 @@ import { navigate, currentPath } from '../router.js';
 import { icon, FACTIONS } from '../icons.js';
 
 const links = [
-  { hash: '#/dashboard', label: 'Dashboard', icon: 'fa-gauge-high' },
   { hash: '#/fleet', label: 'Fleet', icon: 'fa-shuttle-space-vertical' },
   { hash: '#/contracts', label: 'Contracts', icon: 'fa-file-contract' },
   { hash: '#/system', label: 'System', icon: 'fa-solar-system' },
@@ -37,7 +36,7 @@ export function renderNav() {
       <li class="offline-badge" aria-label="Offline" role="status"><i class="fa-solid fa-cloud-slash"></i></li>
       <li>
         <details class="dropdown agent-dropdown">
-          <summary>${agent ? `${agent.startingFaction ? icon(FACTIONS, agent.startingFaction) + ' ' : ''}${agent.symbol} &mdash; ${agent.credits?.toLocaleString() ?? '?'}c` : ''}</summary>
+          <summary>${agent ? `${agent.startingFaction ? icon(FACTIONS, agent.startingFaction) + ' ' : ''}${agent.symbol} &mdash; ₵${agent.credits?.toLocaleString() ?? '?'}` : ''}</summary>
           <ul>
             <li><a href="#" id="logout-btn">Logout</a></li>
           </ul>

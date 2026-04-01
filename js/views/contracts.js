@@ -120,7 +120,7 @@ async function handleAccept(btn, contractId) {
   const onAccepted = btn.dataset.onAccepted || '0';
   const onFulfilled = btn.dataset.onFulfilled || '0';
   const confirmed = await confirmAction(
-    `Accept this contract?<br><br>Payment on accept: <strong>${onAccepted}c</strong><br>Payment on fulfill: <strong>${onFulfilled}c</strong>`
+    `Accept this contract?<br><br>Payment on accept: <strong>₵${onAccepted}</strong><br>Payment on fulfill: <strong>₵${onFulfilled}</strong>`
   );
   if (!confirmed) return;
   try {
@@ -227,8 +227,8 @@ function renderContractCard(c) {
         <dt>Accept By</dt><dd>${formatDate(c.deadlineToAccept)}</dd>
         <dt>Payment</dt>
         <dd>
-          Accept: ${terms.payment.onAccepted?.toLocaleString() ?? 0}c
-          &mdash; Fulfill: ${terms.payment.onFulfilled?.toLocaleString() ?? 0}c
+          Accept: ₵${terms.payment.onAccepted?.toLocaleString() ?? 0}
+          &mdash; Fulfill: ₵${terms.payment.onFulfilled?.toLocaleString() ?? 0}
         </dd>
         <dt>Deliveries</dt>
         <dd>${renderDeliveries(terms.deliver)}</dd>
@@ -246,7 +246,7 @@ function renderContractRow(c) {
       <td>${icon(FACTIONS, c.factionSymbol)} ${c.factionSymbol}</td>
       <td>${statusText(c)}</td>
       <td>${formatDate(terms.deadline)}</td>
-      <td>${terms.payment.onAccepted?.toLocaleString() ?? 0} / ${terms.payment.onFulfilled?.toLocaleString() ?? 0}</td>
+      <td>₵${terms.payment.onAccepted?.toLocaleString() ?? 0} / ₵${terms.payment.onFulfilled?.toLocaleString() ?? 0}</td>
       <td>${renderDeliveries(terms.deliver)}</td>
       <td class="contract-actions" data-contract-id="${c.id}"></td>
     </tr>

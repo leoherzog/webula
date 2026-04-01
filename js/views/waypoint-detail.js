@@ -127,7 +127,7 @@ export async function render({ systemSymbol, waypointSymbol }) {
             const type = btn.dataset.type;
             const price = btn.dataset.price;
             const wp = btn.dataset.waypoint;
-            const confirmed = await confirmAction(`Purchase ${type} for ${Number(price).toLocaleString()}c?`);
+            const confirmed = await confirmAction(`Purchase ${type} for ₵${Number(price).toLocaleString()}?`);
             if (!confirmed) return;
             try {
               await performAction(btn, () => endpoints.purchaseShip(type, wp));
@@ -210,8 +210,8 @@ function renderMarketData(market) {
               <td>${g.symbol}</td>
               <td>${g.type}</td>
               <td>${g.supply}</td>
-              <td>${g.purchasePrice.toLocaleString()}</td>
-              <td>${g.sellPrice.toLocaleString()}</td>
+              <td>₵${g.purchasePrice.toLocaleString()}</td>
+              <td>₵${g.sellPrice.toLocaleString()}</td>
               <td>${g.tradeVolume}</td>
             </tr>
           `).join('')}
@@ -241,7 +241,7 @@ function renderShipyardData(shipyard, waypointSymbol) {
                 <td>${escapeHtml(s.type)}</td>
                 <td>${s.supply}</td>
                 <td>${s.activity || '-'}</td>
-                <td>${s.purchasePrice.toLocaleString()}c</td>
+                <td>₵${s.purchasePrice.toLocaleString()}</td>
                 <td><button class="outline buy-ship-btn" data-type="${s.type}" data-price="${s.purchasePrice}" data-waypoint="${waypointSymbol}">Buy</button></td>
               </tr>
             `).join('')}

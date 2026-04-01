@@ -1,8 +1,8 @@
 import { endpoints } from '../api.js';
-import { addDiscoveredSystem } from '../state.js';
-import { getMain, withLoading, navStatusLabel } from '../components/loading.js';
+import { setAgent, addDiscoveredSystem } from '../state.js';
+import { getMain, withLoading, navStatusLabel, systemFromWaypoint } from '../components/loading.js';
 import { renderPagination } from '../components/pagination.js';
-import { icon, SHIP_FRAMES } from '../icons.js';
+import { icon, SHIP_FRAMES, FACTIONS } from '../icons.js';
 import { startRefresh } from '../refresh.js';
 import { animateCountdowns } from '../components/countdown.js';
 import { performAction, openFormDialog, refreshView } from '../actions.js';
@@ -11,10 +11,28 @@ import { fetchAllPages } from '../api.js';
 export async function render(params, page = 1) {
   const main = getMain();
   await withLoading(main, async () => {
-    const { data: ships, meta } = await endpoints.myShips(page);
+    const [{ data: agent }, { data: ships, meta }] = await Promise.all([
+      endpoints.myAgent(),
+      endpoints.myShips(page),
+    ]);
+    setAgent(agent);
+
+    const hqSystem = systemFromWaypoint(agent.headquarters);
+    addDiscoveredSystem(hqSystem);
     for (const ship of ships) addDiscoveredSystem(ship.nav.systemSymbol);
 
-    main.innerHTML = `<h2>Fleet</h2>`;
+    main.innerHTML = `
+      <article>
+        <dl class="grid">
+          <div><dt>Symbol</dt><dd>${agent.symbol}</dd></div>
+          <div><dt>Faction</dt><dd>${icon(FACTIONS, agent.startingFaction)} ${agent.startingFaction}</dd></div>
+          <div><dt>Headquarters</dt><dd><a href="#/system/${hqSystem}/waypoint/${agent.headquarters}">${agent.headquarters}</a></dd></div>
+          <div><dt>Credits</dt><dd>₵${agent.credits.toLocaleString()}</dd></div>
+        </dl>
+      </article>
+
+      <h2>Fleet</h2>
+    `;
 
     if (ships.length === 0) {
       main.innerHTML += '<p>No ships found.</p>';

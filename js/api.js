@@ -87,8 +87,6 @@ export const endpoints = {
   waypointConstruction: (system, waypoint) =>
     api.get(`/systems/${system}/waypoints/${waypoint}/construction`),
   factions: (page) => fetchPage('/factions', page),
-  register: (symbol, faction) => api.post('/register', { symbol, faction }),
-
   // Contracts
   acceptContract: (contractId) => api.post(`/my/contracts/${contractId}/accept`),
   deliverContract: (contractId, body) => api.post(`/my/contracts/${contractId}/deliver`, body),

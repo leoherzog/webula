@@ -475,7 +475,7 @@ async function openBuyCargoDialog(btn, ship) {
     }
 
     const options = goods.map(g =>
-      `<option value="${g.symbol}">${g.symbol} — ${g.purchasePrice} credits (supply: ${g.supply})</option>`
+      `<option value="${g.symbol}">${g.symbol} — ₵${g.purchasePrice} (supply: ${g.supply})</option>`
     ).join('');
 
     const available = ship.cargo.capacity - ship.cargo.units;
