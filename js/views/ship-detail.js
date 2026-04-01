@@ -52,19 +52,19 @@ export async function render({ shipSymbol }) {
       </dd>
     ` : '';
 
-    const cooldownHtml = cooldown ? `
+    const cooldownHtml = `
       <dl>
         <dt>Cooldown</dt>
         <dd class="countdown-bar">
-          <progress class="cooldown" value="0" max="1"
-            data-expiration="${cooldown.expiration}"
-            data-total-seconds="${cooldown.totalSeconds}"
+          <progress class="cooldown" value="${cooldown ? 0 : 1}" max="1"
+            ${cooldown ? `data-expiration="${cooldown.expiration}"
+            data-total-seconds="${cooldown.totalSeconds}"` : ''}
             data-countdown-id="cooldown-${shipSymbol}">
           </progress>
-          <span data-countdown-text="cooldown-${shipSymbol}"></span>
+          <span data-countdown-text="cooldown-${shipSymbol}">${cooldown ? '' : 'Ready'}</span>
         </dd>
       </dl>
-    ` : '';
+    `;
 
     main.innerHTML = `
       <nav aria-label="breadcrumb">
