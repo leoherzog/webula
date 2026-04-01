@@ -2,6 +2,7 @@ import { addRoute, start, navigate } from './router.js';
 import { getToken } from './state.js';
 import { renderNav } from './components/nav.js';
 import { ready as iconsReady } from './icons.js';
+import { initOffline } from './offline.js';
 
 import { render as loginView } from './views/login.js';
 import { render as dashboardView } from './views/dashboard.js';
@@ -32,6 +33,7 @@ addRoute('/system/:systemSymbol', guard(systemView));
 addRoute('/system/:systemSymbol/waypoint/:waypointSymbol', guard(waypointDetailView));
 
 iconsReady.then(() => {
+  initOffline();
   if (!getToken() && !window.location.hash.startsWith('#/login')) {
     navigate('#/login');
   }

@@ -223,3 +223,28 @@ button.danger {
 button.danger:hover {
   opacity: 0.85;
 }
+
+/* ─── Offline state ─────────────────────────────────────────────── */
+
+.offline-badge {
+  display: none;
+  color: var(--pico-del-color);
+}
+
+[data-offline] .offline-badge {
+  display: list-item;
+}
+
+[data-offline] [data-action],
+[data-offline] [data-cooldown],
+[data-offline] .confirm-btn {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+#last-updated {
+  display: block;
+  margin-bottom: 0.25rem;
+  opacity: 0.6;
+}

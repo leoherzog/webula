@@ -1,5 +1,6 @@
 import { setAgent } from './state.js';
 import { renderNav } from './components/nav.js';
+import { isOffline } from './offline.js';
 
 /**
  * Show a toast notification at the bottom-right of the screen.
@@ -34,6 +35,10 @@ export function showToast(message, variant = 'primary') {
  * @returns {Promise}
  */
 export async function performAction(btn, apiFn) {
+  if (isOffline()) {
+    showToast('You are offline', 'del');
+    return;
+  }
   btn.setAttribute('aria-busy', 'true');
   try {
     const result = await apiFn();

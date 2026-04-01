@@ -34,6 +34,7 @@ export function renderNav() {
       ${navLinks}
     </ul>
     <ul>
+      <li class="offline-badge" aria-label="Offline" role="status"><i class="fa-solid fa-cloud-slash"></i></li>
       <li>
         <details class="dropdown agent-dropdown">
           <summary>${agent ? `${agent.startingFaction ? icon(FACTIONS, agent.startingFaction) + ' ' : ''}${agent.symbol} &mdash; ${agent.credits?.toLocaleString() ?? '?'}c` : ''}</summary>
