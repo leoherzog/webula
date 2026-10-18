@@ -1,4 +1,4 @@
-var SHELL_CACHE = 'webula-shell-v1';
+var SHELL_CACHE = 'webula-shell-v2';
 var CDN_CACHE = 'webula-cdn-v1';
 var API_CACHE = 'webula-api';
 
@@ -31,8 +31,8 @@ var APP_SHELL = [
   '/js/components/pagination.js',
   '/js/components/system-map.js',
   '/js/components/countdown.js',
+  '/js/components/server-reset.js',
   '/js/views/login.js',
-  '/js/views/dashboard.js',
   '/js/views/fleet.js',
   '/js/views/ship-detail.js',
   '/js/views/ship-actions.js',

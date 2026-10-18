@@ -22,7 +22,11 @@ export async function render() {
 
       <div id="login-error" role="alert"></div>
     </article>
+
+    <section id="leaderboard"></section>
   `;
+
+  renderLeaderboard(main.querySelector('#leaderboard'));
 
   const tokenForm = main.querySelector('#token-form');
   const errorEl = main.querySelector('#login-error');
@@ -86,4 +90,37 @@ export async function render() {
     await loginWithToken(token);
     tokenForm.querySelector('button').removeAttribute('aria-busy');
   });
+}
+
+/** Fills `el` with the server leaderboards, or hides it if the status fetch fails. */
+async function renderLeaderboard(el) {
+  el.setAttribute('aria-busy', 'true');
+  try {
+    const { leaderboards } = await endpoints.serverStatus();
+    el.innerHTML = `
+      <h3><i class="fa-solid fa-trophy"></i> Leaderboard</h3>
+      <div class="grid">
+        ${leaderboardCard('Most Credits', 'Credits', leaderboards.mostCredits, e => `₵${e.credits.toLocaleString()}`)}
+        ${leaderboardCard('Most Charts', 'Charts', leaderboards.mostSubmittedCharts, e => e.chartCount.toLocaleString())}
+      </div>
+    `;
+  } catch {
+    el.hidden = true;
+  } finally {
+    el.removeAttribute('aria-busy');
+  }
+}
+
+function leaderboardCard(title, scoreLabel, entries, score) {
+  const body = entries.length ? `
+    <div class="overflow-auto">
+      <table class="striped">
+        <thead><tr><th>#</th><th>Agent</th><th>${scoreLabel}</th></tr></thead>
+        <tbody>
+          ${entries.map((e, i) => `<tr><td>${i + 1}</td><td>${escapeHtml(e.agentSymbol)}</td><td>${score(e)}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  ` : '<p><small>No entries yet.</small></p>';
+  return `<article><header>${title}</header>${body}</article>`;
 }

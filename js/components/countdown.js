@@ -61,9 +61,13 @@ function findCompanionText(bar) {
   return null;
 }
 
-function formatRemaining(ms) {
+export function formatRemaining(ms) {
   const sec = Math.ceil(ms / 1000);
-  const m = Math.floor(sec / 60);
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor(sec % 86400 / 3600);
+  const m = Math.floor(sec % 3600 / 60);
   const s = sec % 60;
+  if (d > 0) return `${d}d ${h}h ${m}m ${s}s`;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }

@@ -243,6 +243,7 @@ button.danger:hover {
   pointer-events: none;
 }
 
+#server-reset,
 #last-updated {
   display: block;
   margin-bottom: 0.25rem;

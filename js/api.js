@@ -10,7 +10,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request(method, path, { body, params, _retries = 3 } = {}) {
+async function request(method, path, { body, params, auth = true, _retries = 3 } = {}) {
   const url = new URL(`${BASE_URL}${path}`);
   if (params) {
     for (const [k, v] of Object.entries(params)) {
@@ -19,7 +19,7 @@ async function request(method, path, { body, params, _retries = 3 } = {}) {
   }
 
   const headers = {};
-  const token = getToken();
+  const token = auth && getToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const hasBody = method !== 'GET' && method !== 'DELETE';
@@ -35,7 +35,7 @@ async function request(method, path, { body, params, _retries = 3 } = {}) {
   if (res.status === 429 && _retries > 0) {
     const retryAfter = parseFloat(res.headers.get('retry-after') || '1');
     await new Promise(r => setTimeout(r, retryAfter * 1000));
-    return request(method, path, { body, params, _retries: _retries - 1 });
+    return request(method, path, { body, params, auth, _retries: _retries - 1 });
   }
 
   if (res.status === 204) return { data: null };
@@ -67,7 +67,8 @@ export async function fetchAllPages(path, limit = 20) {
 }
 
 export const endpoints = {
-  serverStatus: () => api.get('/'),
+  // Unauthenticated: the server answers 401 to a token from before the last reset.
+  serverStatus: () => request('GET', '/', { auth: false }),
   myAgent: () => api.get('/my/agent'),
   myShips: (page) => fetchPage('/my/ships', page),
   shipDetail: (symbol) => api.get(`/my/ships/${symbol}`),

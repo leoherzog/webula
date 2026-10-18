@@ -36,8 +36,9 @@ js/
     nav.js                          # Responsive nav bar (dropdown mobile, horizontal desktop)
     pagination.js                   # Reusable prev/next page controls
     system-map.js                   # Sigma.js system waypoint map
+    server-reset.js                 # Footer countdown to the next server reset
   views/
-    login.js                        # Token login (bearer token + saved agents)
+    login.js                        # Token login (bearer token + saved agents) + leaderboard
     fleet.js                        # Agent dashboard + paginated ship cards
     ship-detail.js                  # Full ship info: nav, frame, reactor, cargo, modules
     contracts.js                    # Contract list (cards on mobile, table on desktop)
