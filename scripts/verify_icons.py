@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
-"""Verify that icons.json covers all enum values from the SpaceTraders API spec.
+"""Check that icons.json maps every enum value in the SpaceTraders spec and nothing else.
 
-Compares the keys in icons.json against the enum values defined in
-api-docs/models/*.json schema files. Reports any values that are:
-  - In the API spec but missing from icons.json (need icon mappings)
-  - In icons.json but removed from the API spec (stale mappings)
-
-Exit code 0 = all synced, 1 = drift detected.
+Exits 1 and lists missing and stale keys when they differ.
 """
 
 import json

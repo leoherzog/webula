@@ -1,15 +1,16 @@
+// Render helpers shared by views: the loading/error wrapper, HTML escaping, and small formatters.
 import { isRefreshing } from '../refresh.js';
 
 export function getMain() {
   return document.getElementById('app-main');
 }
 
-export function showLoading(el) {
+function showLoading(el) {
   el.setAttribute('aria-busy', 'true');
   el.innerHTML = '<p>Loading...</p>';
 }
 
-export function showError(el, error) {
+function showError(el, error) {
   el.removeAttribute('aria-busy');
   el.innerHTML = `
     <article>
@@ -20,37 +21,43 @@ export function showError(el, error) {
   `;
 }
 
+/**
+ * Runs fn with Pico's spinner on el and renders any error into it; a poll skips the spinner and keeps old content on any error but 401.
+ * @returns {Promise<boolean>} false when a route change aborted fn; the caller must not start polling then.
+ */
 export async function withLoading(el, fn) {
   const quiet = isRefreshing();
   if (!quiet) showLoading(el);
   try {
     await fn();
   } catch (err) {
+    if (err.name === 'AbortError') return false;
     if (!quiet || err.status === 401) showError(el, err);
-  } finally {
-    el.removeAttribute('aria-busy');
   }
+  el.removeAttribute('aria-busy');
+  return true;
 }
 
+/** Escapes text for HTML content and quoted attribute values. */
 export function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  return String(str ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
+
+/** Formats a credit amount, such as ₵1,234. */
+export const credits = (n) => `₵${Number(n).toLocaleString()}`;
 
 export function systemFromWaypoint(waypointSymbol) {
   const parts = waypointSymbol.split('-');
   return `${parts[0]}-${parts[1]}`;
 }
 
-const NAV_STATUS_VARIANT = {
-  DOCKED: 'ins',
-  IN_ORBIT: 'primary',
+const NAV_STATUS_BG = {
+  DOCKED: 'pico-background-jade-500',
+  IN_ORBIT: 'pico-background-azure-550',
   IN_TRANSIT: '',
 };
 
 export function navStatusLabel(status) {
-  const variant = NAV_STATUS_VARIANT[status] ?? 'secondary';
-  const cls = variant ? ` class="${variant}"` : '';
-  return `<mark${cls}>${escapeHtml(status)}</mark>`;
+  const bg = NAV_STATUS_BG[status] ?? 'pico-background-slate-600';
+  return `<mark${bg ? ` class="${bg}"` : ''}>${escapeHtml(status)}</mark>`;
 }

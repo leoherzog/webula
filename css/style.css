@@ -1,22 +1,6 @@
-/* Page header — title + inline action button */
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-.page-header {
-  margin-bottom: var(--pico-spacing);
-}
-.page-header h2 {
-  margin-bottom: 0;
-}
-.page-header button {
-  margin-bottom: 0;
-  white-space: nowrap;
-}
+/* The few rules Pico v2 lacks. Prefer Pico markup and pico.colors utilities before adding one. */
 
-/* Definition lists — PicoCSS does not style dt/dd */
+/* Definition lists: Pico leaves dl/dt/dd unstyled. */
 dl {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -29,223 +13,24 @@ dd {
   margin: 0;
 }
 
-/* Fuel/cargo progress bars — scoped to avoid overriding full-width bars */
-dl progress,
-.delivery-progress progress {
-  width: 6rem;
-  vertical-align: middle;
-}
-
-/* Inline progress bars — countdown timers and delivery tracking */
-.countdown-bar,
-.delivery-progress {
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
-}
-.countdown-bar progress { width: 8rem; vertical-align: middle; }
-.countdown-bar-mini progress { width: 5rem; }
-.countdown-bar [data-countdown-text] {
-  font-size: 0.85em;
-  white-space: nowrap;
-  opacity: 0.8;
-}
-.countdown-bar-mini [data-countdown-text] { font-size: 0.75em; }
-
-progress.transit  { --pico-progress-color: var(--pico-primary); }
-progress.cooldown { --pico-progress-color: var(--pico-ins-color); }
-
-/* Labels / pills — extends PicoCSS <mark> with variants */
+/* Pills: Pico's <mark> with rounded corners; a pico-background-* class sets the color. */
 mark {
   border-radius: var(--pico-border-radius);
   font-size: 0.85em;
   white-space: nowrap;
 }
-mark.secondary { background-color: var(--pico-secondary-background); color: var(--pico-secondary-inverse); }
-mark.ins       { background-color: var(--pico-ins-color); color: var(--pico-primary-inverse); }
-mark.del       { background-color: var(--pico-del-color); color: var(--pico-primary-inverse); }
-mark.primary   { background-color: var(--pico-primary-background); color: var(--pico-primary-inverse); }
 
-/* Grouped labels — wrapping flex container */
-.label-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25em;
+/* Card grids: as many 16rem columns as fit. Pico's .grid alone gives every child its own column from 768px. */
+.grid-3 {
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
 }
 
-/* Clickable saved-token pills */
-.saved-token .remove-token {
-  margin-left: 0.3em;
-  opacity: 0.7;
-  text-decoration: none;
-  cursor: pointer;
-}
-.saved-token .remove-token:hover {
-  opacity: 1;
-}
-
-/* Mobile: show dropdown menu, hide desktop nav */
-.desktop-nav {
-  display: none;
-}
-.mobile-nav {
-  display: flex;
-}
-
-/* Active nav link */
-nav a[aria-current="page"] {
-  font-weight: bold;
-}
-
-/* Agent dropdown — auto-width, right-aligned */
-nav .agent-dropdown {
-  position: static;
-}
-nav li:has(.agent-dropdown) {
-  position: relative;
-}
-nav .agent-dropdown > summary + ul {
-  width: 100%;
-  right: 0;
-  left: auto;
-}
-
-@media (min-width: 768px) {
-  /* Desktop: show horizontal nav, hide dropdown */
-  .desktop-nav {
-    display: flex;
-  }
-  .mobile-nav {
-    display: none;
-  }
-}
-
-/* Waypoint/contract cards for mobile — hidden table on mobile */
-.responsive-table {
-  display: none;
-}
-.card-list {
-  display: block;
-}
-
-@media (min-width: 768px) {
-  .responsive-table {
-    display: table;
-    width: 100%;
-  }
-  .card-list {
-    display: none;
-  }
-}
-
-@media (min-width: 1024px) {
-  .grid-3 {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-/* Toast notifications */
-.toast-container {
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  pointer-events: none;
-}
-
-.toast {
-  padding: 0.75rem 1.25rem;
-  border-radius: var(--pico-border-radius);
-  color: var(--pico-primary-inverse);
-  background-color: var(--pico-primary-background);
-  font-size: 0.9em;
-  pointer-events: auto;
-  animation: toast-in 0.3s ease-out;
-}
-
-.toast-ins {
-  background-color: var(--pico-ins-color);
-}
-
-.toast-del {
-  background-color: var(--pico-del-color);
-}
-
-.toast-out {
-  animation: toast-out 0.3s ease-in forwards;
-}
-
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateX(1rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes toast-out {
-  from {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateX(1rem);
-  }
-}
-
-/* Action button groups — wrapping flex layout */
-.action-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
-
-.action-group button {
-  font-size: 0.85em;
-  padding: 0.25rem 0.5rem;
-  margin-bottom: 0;
-}
-
-/* Danger button variant */
-button.danger {
-  --pico-background-color: var(--pico-del-color);
-  --pico-border-color: var(--pico-del-color);
-  --pico-color: var(--pico-primary-inverse);
-}
-
-button.danger:hover {
-  opacity: 0.85;
-}
-
-/* ─── Offline state ─────────────────────────────────────────────── */
-
-.offline-badge {
-  display: none;
-  color: var(--pico-del-color);
-}
-
-[data-offline] .offline-badge {
-  display: list-item;
-}
-
-[data-offline] [data-action],
-[data-offline] [data-cooldown],
-[data-offline] .confirm-btn {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-#server-reset,
-#last-updated {
-  display: block;
-  margin-bottom: 0.25rem;
-  opacity: 0.6;
+/* Toast stack: a manual popover pinned bottom-right; these declarations strip the UA popover box. */
+#toasts {
+  inset: auto 1rem 1rem auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  overflow: visible;
 }

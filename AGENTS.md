@@ -1,145 +1,123 @@
-# Webula — Agent Guide
+# Webula
 
-## What is this?
+Webula is a static web client for the [SpaceTraders API v2](https://spacetraders.io/). It shows the agent, fleet, contracts, systems and waypoints, and sends ship, cargo, contract, shipyard and construction actions.
 
-A static-site GUI for the [SpaceTraders API](https://spacetraders.io/) game. No build tools, no frameworks — vanilla JS with ES modules, PicoCSS v2 for styling, Font Awesome 7 Pro for icons. All auth and game state lives in browser `localStorage`.
+It is vanilla ES modules with no build step and no `package.json`. Pico CSS and `pico.colors.min.css` load from jsdelivr at the `@2` range, Sigma.js 3.0.3 and Graphology 0.26.0 at exact versions, and Font Awesome 7 Pro loads from its kit script. The token and small caches live in `localStorage`. Serve the repo root over HTTP, because ES modules fail under `file://` and `sw.js` and `manifest.json` use root-absolute paths.
 
-**Phase 1** is read-only: view agent info, fleet, contracts, system waypoints, and markets. The code is structured so Phase 2 (action buttons/forms) can be added by filling the `*-actions` placeholder divs in each view.
-
-## Stack
-
-| Layer | Technology | Loaded from |
-|---|---|---|
-| CSS framework | PicoCSS v2 (dark theme) | jsdelivr CDN |
-| CSS colors | PicoCSS colors (utility classes) | jsdelivr CDN |
-| Icons | Font Awesome 7 Pro | Kit script (`kit.fontawesome.com`) |
-| Visualization | Sigma.js v3 + Graphology | jsdelivr CDN (ES module `+esm`) |
-| JS | Vanilla ES modules (`type="module"`) | Local files |
-| API | SpaceTraders v2 (`api.spacetraders.io/v2`) | Bearer token auth |
-
-No `package.json`, no `node_modules`, no bundler. Serve with any static HTTP server (ES modules require it — `file://` won't work).
-
-## File structure
+## Files
 
 ```
-index.html                          # SPA shell: header/nav, main, footer
-css/style.css                       # Minimal custom CSS (PicoCSS handles most)
-icons.json                          # Icon/color mappings (single source of truth)
+index.html               # shell: nav, main, footer, #toasts; registers sw.js
+manifest.json, icons/    # PWA manifest and icons
+sw.js                    # network-first service worker
+css/style.css            # the few rules Pico lacks
+icons.json               # enum to icon and color map
 js/
-  app.js                            # Entry: routes, auth guards, boot
-  api.js                            # Fetch wrapper: auth, retry, pagination, endpoints
-  router.js                         # Hash-based SPA router with :params
-  state.js                          # localStorage: token, cached agent, token history
-  icons.js                          # Loads icons.json, exports icon() helper
+  app.js                 # routes, guard(), boot
+  router.js              # hash router, page and query params, per-route AbortSignal
+  api.js                 # fetch wrapper and endpoints
+  state.js               # localStorage: token, agents, systems, surveys
+  icons.js               # JSON-module import of icons.json, icon()
+  actions.js             # performAction, dialogs, toasts, shared pickers
+  refresh.js             # 30 s polling
+  offline.js             # offline badge, Last updated footer
   components/
-    loading.js                      # withLoading(), showError(), escapeHtml(), etc.
-    nav.js                          # Responsive nav bar (dropdown mobile, horizontal desktop)
-    pagination.js                   # Reusable prev/next page controls
-    system-map.js                   # Sigma.js system waypoint map
-    server-reset.js                 # Footer countdown to the next server reset
-  views/
-    login.js                        # Token login (bearer token + saved agents) + leaderboard
-    fleet.js                        # Agent dashboard + paginated ship cards
-    ship-detail.js                  # Full ship info: nav, frame, reactor, cargo, modules
-    contracts.js                    # Contract list (cards on mobile, table on desktop)
-    system.js                       # System map + waypoint browser + market data
-scripts/
-  verify_icons.py                   # Checks icons.json against API spec enums
-.github/workflows/
-  verify-icons.yml                  # Weekly CI: detect icon mapping drift
-api-docs/                           # SpaceTraders OpenAPI spec (models + reference)
-pico/                               # PicoCSS v2 source (SCSS reference)
+    loading.js           # withLoading, escapeHtml, navStatusLabel, credits
+    countdown.js         # countdown <progress> bars
+    pagination.js        # previous/next links
+    nav.js               # top nav and agent menu
+    server-reset.js      # footer countdown to the next server reset
+    system-map.js        # Sigma map of one system
+  views/                 # one module per route; ship-actions.js serves ship-detail.js
+scripts/verify_icons.py  # checks icons.json against the spec's enums
+api-docs/, pico/         # reference submodules; never edit
 ```
 
-## Architecture
+## Routes
 
-### Routing (`router.js`)
-Hash-based SPA. Routes registered in `app.js` via `addRoute(pattern, handler)`.
-
-| Hash | View | Auth |
-|---|---|---|
-| `#/login` | `login.js` | No |
-| `#/fleet` | `fleet.js` | Yes |
-| `#/fleet/:shipSymbol` | `ship-detail.js` | Yes |
-| `#/contracts` | `contracts.js` | Yes |
-| `#/system` | `system.js` | Yes |
-| `#/system/:systemSymbol` | `system.js` | Yes |
-
-Auth-guarded routes use `guard(viewFn)` which checks `getToken()` and redirects to `#/login` if missing.
-
-### Data flow
-
-```
-localStorage (token, agent)
-  ↓
-app.js guard() checks token
-  ↓
-View render(params) called
-  ↓
-endpoints.xxx() — api.js injects Bearer token, retries 429s
-  ↓
-withLoading() — shows spinner, catches errors, renders HTML
-  ↓
-icon(MAP, key) — resolves FA icon + Pico color from icons.json
-```
-
-### API client (`api.js`)
-- Base URL: `https://api.spacetraders.io/v2`
-- Auto-injects `Authorization: Bearer <token>` from `state.js`
-- Rate limit: retries 429 responses up to 3 times with `retry-after` delay
-- All responses are `{ data, meta? }` — `meta` has `total`, `page`, `limit` for pagination
-- Throws `ApiError(status, body)` on non-2xx
-
-### View pattern
-Every view exports `async function render(params)`:
-1. Gets `#app-main` via `getMain()`
-2. Wraps async work in `withLoading(main, async () => { ... })`
-3. Builds HTML with template literals + `icon()` + `escapeHtml()`
-4. Leaves `<div id="*-actions">` placeholders for future Phase 2 action UI
-5. Paginated views accept optional `page` param, re-invoke `render()` on page change
-
-### Icon system (`icons.json` + `icons.js`)
-`icons.json` is the single source of truth for 4 categories: `shipFrames`, `factions`, `waypointTypes`, `starTypes`. Each entry maps to a Font Awesome icon name and a PicoCSS color utility class.
-
-Every category has a `_default` entry. When `icon(MAP, key)` encounters an unmapped key, it uses the default and logs `console.warn`.
-
-`icons.js` fetches `icons.json` at startup and exports a `ready` promise. `app.js` awaits `ready` before starting the router.
-
-### System map (`system-map.js`)
-Uses Sigma.js v3 (WebGL graph renderer) + Graphology (graph data structure), loaded as ES modules from jsdelivr CDN.
-
-- Waypoints → graph nodes at API-provided x,y coordinates, colored/sized by type
-- Orbitals → edges connecting moons to parent bodies
-- Ships → small offset nodes near their waypoint, colored by nav status
-- Hover highlights connected nodes, dims unrelated ones
-- Click scrolls to waypoint in the list (or navigates to ship detail)
-- Pan/zoom built-in (mouse + touch)
-- `killMap()` cleans up WebGL resources on navigation
-
-### Responsive layout
-Mobile-first via PicoCSS defaults. Custom CSS is minimal:
-
-| Breakpoint | Layout changes |
+| Hash | View |
 |---|---|
-| < 768px | Single-column cards, dropdown nav, `.card-list` visible |
-| >= 768px | Horizontal nav, `.responsive-table` visible, 2-col grids |
-| >= 1024px | `.grid-3` for 3-column fleet cards |
+| `#/login` | `login.js`: token login, saved agents, server status, stats, announcements, links, leaderboard with saved agents marked |
+| `#/fleet` | `fleet.js`: agent summary, ship cards |
+| `#/fleet/:shipSymbol` | `ship-detail.js`: stored surveys, cargo valued at the local market |
+| `#/contracts` | `contracts.js` |
+| `#/system`, `#/system/:systemSymbol` | `system.js`: map, waypoint cards filtered by type and trait |
+| `#/system/:systemSymbol/waypoint/:waypointSymbol` | `waypoint-detail.js`: market, shipyard with ship specs, jump gate, construction |
 
-### CI (`verify-icons.yml`)
-Python script compares `icons.json` keys against enum values in `api-docs/models/*.json` schemas. Runs weekly (Monday 9am UTC), on relevant file changes, and on manual trigger. Fails if mappings are out of sync with the API spec.
+`guard()` protects every route but login. An unmatched hash goes to `#/fleet`, or to `#/login` without a token. Route params match `[\w-]+`, so they are safe in HTML. Paginated views keep the page in the hash query as `page=N`, which handlers receive as `params.page`.
+
+Handlers also receive `params.query`, the hash's `URLSearchParams`, whose values are untrusted until checked against a known list. The system view keeps its filters there as `?type=&traits=`, and `paginationNav(meta, base)` keeps any query in `base`.
+
+## Views
+
+- `render(params)` wraps its work in `withLoading(getMain(), fn)`, which shows the spinner, renders errors, and adds a login link on a 401.
+- A route change aborts the previous view's GETs. `withLoading` then returns false and writes nothing, leaving `aria-busy` on `#app-main` for the next view's spinner. A view that writes `#app-main` without `withLoading`, like login, must remove `aria-busy` itself.
+- Fleet, contracts, ship detail and waypoint detail poll every 30 s, calling `startRefresh(() => render(params))` only when `withLoading` returned true. A poll keeps the old content on any error but 401.
+- Build the page HTML in one template and assign it once. A poll thus closes open `<details>`, so waypoint detail reopens the shipyard ships that were open in the old DOM.
+- Put action buttons in the card's `<footer>`, and omit the footer when it would be empty.
+- Bind delegated listeners to an element the render created, never to `#app-main`, which outlives renders and would gain a listener per poll.
+
+## Actions
+
+- `performAction(btn, apiFn, after = refreshView)` refuses offline, marks `btn` busy, toasts a summary of the response and each ship condition event in red, stores `data.agent` for the nav's credits, then runs `after`. It resolves null on failure and never rejects, so call sites need no try/catch. A custom `after` replaces the refresh, so it calls the exported `refreshView()` itself.
+- `openFormDialog(title, bodyHtml, onSubmit)` submits natively, so `required`, `min` and `max` validate. It stays open when `onSubmit` resolves null, so callbacks return `performAction(...)`. Without `onSubmit` it is read-only, with no form and one Close button, which is how scans show their results. Any `data-close` element inside closes it.
+- `confirmAction(message)` takes HTML, so escape API text. Repair and scrap put the `repairQuote()` or `scrapQuote()` price in it.
+- `busyFetch(btn, fn)` runs a GET that feeds a dialog. `openNavigateDialog` and `openDeliverDialog` are the shared pickers.
+- Ship pickers for deliver, supply, transfer and negotiate take their ships from `endpoints.allShips()`. `openNavigateDialog` loads the system and `systemMarkets()` in one `busyFetch`, and a failed market lookup only drops the market flags.
+- Gate buttons and picker options on a mount, module, trait or waypoint type only when the endpoint's description in `api-docs/reference/SpaceTraders.json` states it. Docked and in-orbit checks may follow the game where the spec is silent, as may offering `jumpShip` only at a built `JUMP_GATE`, whose connections the jump description refers to.
+- Cooldown-bound buttons carry `data-cooldown` and stay disabled until `ship.cooldown` expires.
+- Ship detail loads the waypoint's market once per render, only when docked or holding cargo, and passes it to `shipActions` and `bindShipActions`. Sell and Buy reuse it and fetch only when it is null, and Sell shows only for goods it trades. The cargo table's Sell and Value columns show only when the market prices some of the cargo.
+- Surveys live in `localStorage` as `st_surveys`, unmodified, because `extractWithSurvey` rejects a changed one. `state.js` reads and writes them through `getSurveys(waypointSymbol)`, `addSurveys(surveys)` and `removeSurvey(signature)`, drops expired ones, and clears them with the token. Ship detail offers them only to an orbiting ship with a Mining Laser or Gas Siphon, because `extract/survey` names no mount and replaces extract's survey payload. An extract with survey discards that survey only on the server's survey verification, expiration or exhaustion code (4220, 4221, 4224).
+
+## API client
+
+- Every call carries the bearer token except `serverStatus()`, because `GET /` answers 401 to a token from before the last reset.
+- Authenticated GETs carry `navSignal()`. Wrap optional sub-fetches in `orNull()`, which rethrows `AbortError` so a superseded render stops.
+- A 429 is retried 3 times after `retry-after`.
+- `fetchPage` and `fetchAllPages` take extra query params. Null and empty values are dropped, and an array becomes a repeated key. `systemWaypoints(system, page, { type, traits })` sends only those two filters.
+- Responses are `{ data, meta? }`, where `meta` has `total`, `page` and `limit`. `GET /` is unwrapped, and a 204 becomes `{ data: null }`.
+- Errors carry `message`, `status` and the API's numeric error `code`.
+- List pages hold at most 20 items. `allShips()` and `systemMarkets()` walk them all and return plain arrays.
+
+## Service worker
+
+- Every GET is network-first, and the cache answers only offline. API responses go to `webula-api`, newest 100; everything else goes to `SHELL_CACHE`.
+- Cache keys ignore the token, so `state.js` deletes `webula-api` when the token changes or is cleared. That name must match `API_CACHE` in `sw.js`.
+- `APP_SHELL` must list exactly the shipped files, because one 404 fails the install. Editing `sw.js` reinstalls the worker; code changes need no version bump.
+- Offline with nothing cached, a GET gets a 503 JSON "You are offline". Writes pass through, and `performAction` refuses them offline.
+- Fresh API responses post `api-updated`, which `offline.js` shows as Last updated.
+
+## Icons and CI
+
+- `icons.json` maps `shipFrames`, `factions`, `waypointTypes` and `starTypes` to a Font Awesome icon and a `pico-color-*` class. `icons.js` imports it as a JSON module.
+- `icon(MAP, key)` falls back to the category's `_default` and warns once per unmapped key.
+- The system map reads the class's `--pico-color-*` property, so use only classes `pico.colors` defines.
+- `.github/workflows/verify-icons.yml` runs `scripts/verify_icons.py` weekly against the spec's upstream HEAD, on pushes that touch `icons.json`, the script or the workflow, and on demand.
+- Run it locally with `uv run scripts/verify_icons.py`.
+
+## System map
+
+- `renderSystemMap(container, systemData, ships)` needs a container that is in the document and has an explicit height.
+- One Sigma instance lives at a time. A new render kills the previous one, and the next hashchange kills it too, freeing the WebGL context and Sigma's resize listener.
+- Sigma throws without WebGL, so `system.js` catches it and keeps the waypoint grid.
+- Every map color comes from a `--pico-color-*` property through `paletteColor()`. Ship dots match `navStatusLabel`'s pills, and labels, edges and dimmed nodes use zinc-400.
+- Sigma's canvas composites as premultiplied alpha, so an unscaled `rgba()` renders too bright. Pass translucent colors as `paletteColor(cls, alpha)`, which scales the channels.
 
 ## Conventions
 
-- **PicoCSS first**: use semantic HTML and PicoCSS classes/patterns before writing custom CSS. Reference `pico/scss/` source for available styles.
-- **`<article>` = card**: PicoCSS styles `<article>` with `<header>` as a card component.
-- **`aria-busy="true"`**: PicoCSS renders a loading spinner on buttons and containers.
-- **`.outline`**: PicoCSS class for outline-style buttons (secondary emphasis).
-- **`<div role="group">`**: PicoCSS inline button groups.
-- **`<details class="dropdown">`**: PicoCSS v2 dropdown pattern (NOT `role="list"` which is v1).
-- **`.overflow-auto`**: PicoCSS utility for scrollable table wrappers.
-- **Pico color classes**: `pico-color-{family}-{shade}` for text color, `pico-background-{family}-{shade}` for backgrounds. Loaded via `pico.colors.css`.
-- **`<mark>` labels/pills**: extends Pico's native `<mark>` with variant classes for colored pills. Bare `<mark>` = Pico default highlight. Variants: `.ins` (green, success), `.del` (red, danger), `.primary` (accent), `.secondary` (neutral/muted). Wrap multiple labels in `<span class="label-group">` for flex-wrap layout. Use `navStatusLabel(status)` from `loading.js` for ship nav status badges.
-- **Font Awesome**: use `/suggest-icon` and `/add-icon` skills for icon lookups, not web search.
-- **No build step**: everything must work as plain static files served over HTTP.
-- **`escapeHtml()`**: always use for user-provided or API-returned text rendered as HTML.
-- **Placeholders**: every view leaves `<div id="*-actions">` containers for Phase 2 expansion.
+- Pico and Font Awesome first. Check `pico/scss/` and the FA utilities (`fa-fw`, `fa-spin`, `fa-stack`, `fa-ul`/`fa-li`, sizes) before writing CSS. `style.css` holds only the `dl` grid, the `mark` pill shape, `.grid-3` and `#toasts`.
+- A card is an `<article>` with a `<header>`, and its actions go in a `<footer>`. Card lists use `<div class="grid grid-3">`.
+- `aria-busy="true"` shows Pico's spinner.
+- `.outline` and `.secondary` mark lesser buttons. Destructive actions are `outline secondary` with a red `fa-trash-can`, behind a `confirmAction`.
+- `<div role="group">` joins controls. Icon-only buttons need `aria-label` and `title`.
+- Dropdowns are `<details class="dropdown">`. Use `<summary role="button">` for a button-styled trigger and `<ul dir="rtl">` to right-align the menu.
+- An accordion is a plain `<details>`. Give its `<summary>` `role="button"` when it holds pills that may wrap, because Pico sets a bare summary's line height to 1rem and wrapped pills overlap.
+- Wrap wide tables in `.overflow-auto`. Keep dropdowns and `data-tooltip` out of it, because it clips them.
+- Color with `pico-color-{family}-{shade}` and `pico-background-{family}-{shade}`, never a literal.
+- `manifest.json`, the theme-color meta and the icons cannot read CSS, so they use palette hex: azure-500 `#017fc0` on slate-950 `#0e1118`.
+- A pill is a `<mark>`: bare for a highlight, or with a `pico-background-*` class. Separate pills with spaces. `navStatusLabel(status)` renders ship status.
+- Progress bars are plain `<progress>`. Countdown bars carry `data-start`, `data-end` and `data-done`, and `animateCountdowns()` writes into the `<small>` that follows.
+- Toasts use `showToast(message, 'ins' | 'del')`.
+- Format credits with `credits(n)` from `loading.js`.
+- Pass API text and user input through `escapeHtml()`, attribute values included. Enum values and ship, waypoint and system symbols may stay raw, because the router already assumes symbols match `[\w-]+`. The agent symbol is user-chosen, so escape it.
+- Find icons with the `/suggest-icon` and `/add-icon` skills, not web search.

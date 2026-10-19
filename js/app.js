@@ -1,7 +1,7 @@
+// Entry point: registers the routes, guards every route but login behind a token, and starts the router.
 import { addRoute, start, navigate } from './router.js';
 import { getToken } from './state.js';
 import { renderNav } from './components/nav.js';
-import { ready as iconsReady } from './icons.js';
 import { initOffline } from './offline.js';
 import { initServerReset } from './components/server-reset.js';
 
@@ -31,11 +31,6 @@ addRoute('/system', guard(systemView));
 addRoute('/system/:systemSymbol', guard(systemView));
 addRoute('/system/:systemSymbol/waypoint/:waypointSymbol', guard(waypointDetailView));
 
-iconsReady.then(() => {
-  initOffline();
-  initServerReset();
-  if (!getToken() && !window.location.hash.startsWith('#/login')) {
-    navigate('#/login');
-  }
-  start(() => navigate(getToken() ? '#/fleet' : '#/login'));
-});
+initOffline();
+initServerReset();
+start(() => navigate(getToken() ? '#/fleet' : '#/login'));

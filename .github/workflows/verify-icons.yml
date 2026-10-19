@@ -2,27 +2,25 @@ name: Verify Icon Mappings
 
 on:
   schedule:
-    - cron: '0 9 * * 1'  # Every Monday at 9am UTC
+    - cron: '0 9 * * 1'  # Mondays 09:00 UTC
   push:
     paths:
       - 'icons.json'
-      - 'api-docs/models/ShipFrame.json'
-      - 'api-docs/models/FactionSymbol.json'
-      - 'api-docs/models/WaypointType.json'
-      - 'api-docs/models/SystemType.json'
+      - 'scripts/verify_icons.py'
+      - '.github/workflows/verify-icons.yml'
   workflow_dispatch:
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: true
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.x'
+      # Check against the spec's upstream HEAD, not the pinned gitlink, so the weekly run sees new enum values.
+      - name: Fetch latest API spec
+        run: git submodule update --init --remote --depth 1 api-docs
+
+      - uses: astral-sh/setup-uv@v10.3.0
 
       - name: Verify icon mappings against API spec
-        run: python scripts/verify_icons.py
+        run: uv run scripts/verify_icons.py

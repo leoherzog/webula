@@ -1,31 +1,27 @@
+// Re-renders the current view every 30 s; router.js stops it on every route change.
 let timerId = null;
 let refreshing = false;
-let generation = 0;
 
+/** True while a poll re-render runs, so withLoading keeps the old content instead of showing a spinner. */
 export function isRefreshing() {
   return refreshing;
 }
 
-export function startRefresh(callback, interval = 30000) {
+export function startRefresh(callback) {
   stopRefresh();
-  const gen = ++generation;
   timerId = setInterval(async () => {
-    if (gen !== generation) return;
     refreshing = true;
     try {
       await callback();
-    } catch {
-      // Silently ignore — keep showing stale content
     } finally {
       refreshing = false;
     }
-  }, interval);
+  }, 30000);
 }
 
 export function stopRefresh() {
-  generation++;
-  if (timerId !== null) {
-    clearInterval(timerId);
-    timerId = null;
-  }
+  clearInterval(timerId);
+  timerId = null;
+  // A route change during a poll must render the new view with its spinner and errors.
+  refreshing = false;
 }

@@ -1,22 +1,16 @@
-let SHIP_FRAMES = {};
-let FACTIONS = {};
-let WAYPOINT_TYPES = {};
-let STAR_TYPES = {};
+// Icon lookup for API enums: icons.json maps each value to a Font Awesome icon and a pico.colors class, with a _default per category.
+import data from '../icons.json' with { type: 'json' };
 
-const ready = fetch('./icons.json')
-  .then(r => r.json())
-  .then(data => {
-    SHIP_FRAMES = data.shipFrames;
-    FACTIONS = data.factions;
-    WAYPOINT_TYPES = data.waypointTypes;
-    STAR_TYPES = data.starTypes;
-  })
-  .catch(err => console.error('Failed to load icons.json:', err));
-
-export { SHIP_FRAMES, FACTIONS, WAYPOINT_TYPES, STAR_TYPES, ready };
+export const {
+  shipFrames: SHIP_FRAMES,
+  factions: FACTIONS,
+  waypointTypes: WAYPOINT_TYPES,
+  starTypes: STAR_TYPES,
+} = data;
 
 const warned = new Set();
 
+/** Returns the <i> for key, falling back to map._default and warning once per unmapped key. */
 export function icon(map, key) {
   let entry = map[key];
   if (!entry) {
@@ -24,7 +18,7 @@ export function icon(map, key) {
       warned.add(key);
       console.warn(`[icons] Unmapped key: "${key}" — using default`);
     }
-    entry = map._default ?? { icon: 'fa-question', color: 'pico-color-primary' };
+    entry = map._default;
   }
   return `<i class="fa-solid ${entry.icon} ${entry.color}" aria-hidden="true"></i>`;
 }

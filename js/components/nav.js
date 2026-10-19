@@ -1,6 +1,8 @@
+// Top nav: icon links to the three main views, an offline badge, and the agent menu with credits and logout.
 import { getAgent, clearToken } from '../state.js';
 import { navigate, currentPath } from '../router.js';
 import { icon, FACTIONS } from '../icons.js';
+import { escapeHtml, credits } from './loading.js';
 
 const links = [
   { hash: '#/fleet', label: 'Fleet', icon: 'fa-shuttle-space-vertical' },
@@ -13,37 +15,22 @@ export function renderNav() {
   const agent = getAgent();
   const path = currentPath();
 
-  const navLinks = links.map(l => {
-    const current = path.startsWith(l.hash.slice(1)) ? ' aria-current="page"' : '';
-    return `<li><a href="${l.hash}"${current}><i class="fa-solid ${l.icon}"></i> ${l.label}</a></li>`;
-  }).join('');
-
+  // role="button" lets Pico's nav grow the summary when the text wraps on phones; .overflow-auto contains its floated chevron.
   nav.innerHTML = `
-    <ul class="mobile-nav">
-      <li>
-        <details class="dropdown">
-          <summary>Menu</summary>
-          <ul>
-            ${navLinks}
-          </ul>
-        </details>
-      </li>
-    </ul>
-    <ul class="desktop-nav">
-      ${navLinks}
+    <ul>
+      ${links.map((l) => `<li><a href="${l.hash}" aria-label="${l.label}" data-tooltip="${l.label}" data-placement="bottom"${path.startsWith(l.hash.slice(1)) ? ' aria-current="page"' : ''}><i class="fa-solid fa-fw ${l.icon}"></i></a></li>`).join('')}
     </ul>
     <ul>
-      <li class="offline-badge" aria-label="Offline" role="status"><i class="fa-solid fa-cloud-slash"></i></li>
+      <li id="offline-badge" role="status" aria-label="Offline"${navigator.onLine ? ' hidden' : ''}><i class="fa-solid fa-cloud-slash pico-color-red-450"></i></li>
       <li>
-        <details class="dropdown agent-dropdown">
-          <summary>${agent ? `${agent.startingFaction ? icon(FACTIONS, agent.startingFaction) + ' ' : ''}${agent.symbol} &mdash; ₵${agent.credits?.toLocaleString() ?? '?'}` : ''}</summary>
-          <ul>
+        <details class="dropdown">
+          <summary role="button" class="outline secondary overflow-auto">${agent ? `${icon(FACTIONS, agent.startingFaction)} ${escapeHtml(agent.symbol)} &mdash; ${credits(agent.credits)}` : ''}</summary>
+          <ul dir="rtl">
             <li><a href="#" id="logout-btn">Logout</a></li>
           </ul>
         </details>
       </li>
-    </ul>
-  `;
+    </ul>`;
 
   nav.querySelector('#logout-btn').addEventListener('click', (e) => {
     e.preventDefault();

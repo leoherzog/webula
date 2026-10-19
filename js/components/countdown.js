@@ -1,73 +1,32 @@
-/**
- * Smooth client-side countdown animations for <progress> elements.
- * Call animateCountdowns() after any render that places progress elements
- * with data-arrival or data-expiration attributes.
- *
- * Transit bars:  <progress data-departure="ISO" data-arrival="ISO" value="0" max="1">
- * Cooldown bars: <progress data-expiration="ISO" data-total-seconds="N" value="0" max="1">
- *
- * Companion text: <span data-countdown-text="SAME_ID"> paired via data-countdown-id.
- * Each rAF loop self-terminates when its element leaves the DOM.
- */
+// Animates countdown <progress> bars: each fills from data-start to data-end and writes the time left into the <small> that follows it.
+const duration = new Intl.DurationFormat('en', { style: 'narrow' });
 
+/** Starts a rAF loop for every progress[data-end] in the document; each loop ends when its bar finishes or leaves the DOM. */
 export function animateCountdowns() {
-  for (const bar of document.querySelectorAll('progress[data-arrival]')) {
-    animateTransit(bar);
-  }
-  for (const bar of document.querySelectorAll('progress[data-expiration]')) {
-    animateCooldown(bar);
+  for (const bar of document.querySelectorAll('progress[data-end]')) {
+    const start = Date.parse(bar.dataset.start);
+    const end = Date.parse(bar.dataset.end);
+    // An empty or unparsable span would assign NaN to value, which <progress> rejects with a TypeError.
+    if (!(end > start)) continue;
+    const text = bar.nextElementSibling;
+    const tick = () => {
+      if (!bar.isConnected) return;
+      const remain = end - Date.now();
+      bar.value = Math.min(Math.max(1 - remain / (end - start), 0), 1);
+      text.textContent = remain > 0 ? formatRemaining(remain) : bar.dataset.done;
+      if (remain > 0) requestAnimationFrame(tick);
+    };
+    tick();
   }
 }
 
-function animateTransit(bar) {
-  const departure = new Date(bar.dataset.departure).getTime();
-  const arrival = new Date(bar.dataset.arrival).getTime();
-  const total = arrival - departure;
-  if (!(total > 0)) return;
-  const textEl = findCompanionText(bar);
-
-  function tick() {
-    if (!document.contains(bar)) return;
-    const now = Date.now();
-    bar.value = Math.min((now - departure) / total, 1);
-    if (textEl) {
-      const remain = Math.max(arrival - now, 0);
-      textEl.textContent = remain > 0 ? formatRemaining(remain) : 'Arrived';
-    }
-    if (bar.value < 1) requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-}
-
-function animateCooldown(bar) {
-  const expiration = new Date(bar.dataset.expiration).getTime();
-  const totalMs = parseFloat(bar.dataset.totalSeconds) * 1000;
-  if (!totalMs || totalMs <= 0) return;
-  const textEl = findCompanionText(bar);
-
-  function tick() {
-    if (!document.contains(bar)) return;
-    const remain = Math.max(expiration - Date.now(), 0);
-    bar.value = Math.min(1 - remain / totalMs, 1);
-    if (textEl) textEl.textContent = remain > 0 ? formatRemaining(remain) : 'Ready';
-    if (remain > 0) requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-}
-
-function findCompanionText(bar) {
-  const id = bar.dataset.countdownId;
-  if (id) return document.querySelector(`[data-countdown-text="${id}"]`);
-  return null;
-}
-
+/** Formats a positive duration as e.g. "2d 3h 4m 5s", omitting zero units. */
 export function formatRemaining(ms) {
-  const sec = Math.ceil(ms / 1000);
-  const d = Math.floor(sec / 86400);
-  const h = Math.floor(sec % 86400 / 3600);
-  const m = Math.floor(sec % 3600 / 60);
-  const s = sec % 60;
-  if (d > 0) return `${d}d ${h}h ${m}m ${s}s`;
-  if (h > 0) return `${h}h ${m}m ${s}s`;
-  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  const s = Math.ceil(ms / 1000);
+  return duration.format({
+    days: Math.floor(s / 86400),
+    hours: Math.floor(s / 3600) % 24,
+    minutes: Math.floor(s / 60) % 60,
+    seconds: s % 60,
+  });
 }

@@ -2,7 +2,7 @@
   "shipFrames": {
     "_default": {
       "icon": "fa-shuttle-space",
-      "color": "pico-color-primary"
+      "color": "pico-color-azure-350"
     },
     "FRAME_PROBE": {
       "icon": "fa-drone",
@@ -72,7 +72,7 @@
   "factions": {
     "_default": {
       "icon": "fa-flag",
-      "color": "pico-color-primary"
+      "color": "pico-color-azure-350"
     },
     "COSMIC": {
       "icon": "fa-star-of-life",
@@ -154,7 +154,7 @@
   "waypointTypes": {
     "_default": {
       "icon": "fa-location-dot",
-      "color": "pico-color-primary"
+      "color": "pico-color-azure-350"
     },
     "PLANET": {
       "icon": "fa-earth-americas",
@@ -216,7 +216,7 @@
   "starTypes": {
     "_default": {
       "icon": "fa-star",
-      "color": "pico-color-primary"
+      "color": "pico-color-azure-350"
     },
     "NEUTRON_STAR": {
       "icon": "fa-atom",

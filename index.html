@@ -14,24 +14,25 @@
   <meta property="og:site_name" content="Webula">
   <meta property="og:locale" content="en_US">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#13171f">
+  <meta name="theme-color" content="#0e1118">
   <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.colors.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.colors.min.css" crossorigin="anonymous">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://kit.fontawesome.com/f0d2d60eac.js" crossorigin="anonymous"></script>
 </head>
 <body>
-  <header class="container" id="app-header">
+  <header class="container">
     <nav id="app-nav"></nav>
   </header>
   <main class="container" id="app-main"></main>
   <footer class="container" style="text-align:center">
-    <small id="server-reset" hidden><i class="fa-solid fa-hourglass-half"></i> <span></span></small>
-    <small id="last-updated"></small>
-    <small><a href="https://github.com/leoherzog/webula" target="_blank"><i class="fa-brands fa-github"></i> Webula</a> | <a href="https://spacetraders.io" target="_blank"><i class="fa-solid fa-rocket-launch"></i> SpaceTraders</a> | <a href="https://herzog.tech" target="_blank"><i class="fa-solid fa-heart"></i> herzog.tech</a></small>
+    <p id="server-reset" class="pico-color-zinc-450" hidden><small><i class="fa-solid fa-hourglass-half"></i> <span></span></small></p>
+    <p id="last-updated" class="pico-color-zinc-450" hidden><small></small></p>
+    <p><small><a href="https://github.com/leoherzog/webula" target="_blank"><i class="fa-brands fa-github"></i> Webula</a> | <a href="https://spacetraders.io" target="_blank"><i class="fa-solid fa-rocket-launch"></i> SpaceTraders</a> | <a href="https://herzog.tech" target="_blank"><i class="fa-solid fa-heart"></i> herzog.tech</a></small></p>
   </footer>
+  <div id="toasts" popover="manual" role="status"></div>
   <script type="module" src="js/app.js"></script>
   <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
 </body>
