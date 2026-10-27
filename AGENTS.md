@@ -64,6 +64,7 @@ Handlers also receive `params.query`, the hash's `URLSearchParams`, whose values
 ## Actions
 
 - `performAction(btn, apiFn, after = refreshView)` refuses offline, marks `btn` busy, toasts a summary of the response and each ship condition event in red, stores `data.agent` for the nav's credits, then runs `after`. It resolves null on failure and never rejects, so call sites need no try/catch. A custom `after` replaces the refresh, so it calls the exported `refreshView()` itself.
+- `summarize()` names a response by its shape, most specific first. Contract and construction shapes precede the cargo-only shape of jettison and transfer, and accept and fulfill differ only by `contract.fulfilled`.
 - `openFormDialog(title, bodyHtml, onSubmit)` submits natively, so `required`, `min` and `max` validate. It stays open when `onSubmit` resolves null, so callbacks return `performAction(...)`. Without `onSubmit` it is read-only, with no form and one Close button, which is how scans show their results. Any `data-close` element inside closes it, so links in a result carry it or sit inside one.
 - `confirmAction(message)` takes HTML, so escape API text. Repair and scrap put the `repairQuote()` or `scrapQuote()` price in it.
 - `busyFetch(btn, fn)` runs a GET that feeds a dialog. `openNavigateDialog` and `openDeliverDialog` are the shared pickers.

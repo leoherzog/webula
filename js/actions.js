@@ -51,7 +51,7 @@ export async function performAction(btn, apiFn, after = refreshView) {
     renderNav();
   }
   showToast(summarize(result.data), 'ins');
-  for (const e of result.data?.events ?? []) showToast(`${e.component}: ${e.name}`, 'del');
+  for (const e of result.data?.events ?? []) showToast(`${e.component}: ${e.name}. ${e.description}`, 'del');
   after(result);
   return result;
 }
@@ -75,8 +75,24 @@ function summarize(data) {
   if (data?.systems) return `Scanned ${count(data.systems.length, 'system')}`;
   if (data?.waypoints) return `Scanned ${count(data.waypoints.length, 'waypoint')}`;
   if (data?.ships) return `Scanned ${count(data.ships.length, 'ship')}`;
-  const left = Date.parse(data?.nav?.route?.arrival) - Date.now();
-  if (data?.nav?.status === 'IN_TRANSIT' && left > 0) return `Arriving in ${formatRemaining(left)}`;
+  if (data?.chart) return `Charted ${data.waypoint.symbol}`;
+  // Deliver and supply also return cargo, so they precede jettison and transfer, which return cargo alone.
+  const c = data?.contract;
+  if (c && data.cargo) return `Delivered: ${(c.terms.deliver ?? []).map((d) => `${d.tradeSymbol} ${d.unitsFulfilled}/${d.unitsRequired}`).join(', ')}`;
+  // Accept and fulfill both return the agent and contract; a fulfilled contract is also accepted.
+  if (c?.fulfilled) return `Fulfilled contract for ${credits(c.terms.payment.onFulfilled)}`;
+  if (c?.accepted) return `Accepted contract for ${credits(c.terms.payment.onAccepted)}`;
+  if (c) return `Negotiated ${c.type} contract with ${c.factionSymbol}`;
+  const site = data?.construction;
+  if (site) return site.isComplete ? `Completed ${site.symbol}`
+    : `Supplied ${site.symbol}: ${site.materials.map((m) => `${m.tradeSymbol} ${m.fulfilled}/${m.required}`).join(', ')}`;
+  const nav = data?.nav;
+  const left = Date.parse(nav?.route?.arrival) - Date.now();
+  if (nav?.status === 'IN_TRANSIT' && left > 0) return `Arriving in ${formatRemaining(left)}`;
+  // Orbit and dock return nav alone; a flight mode change also returns fuel.
+  if (nav && nav.status !== 'IN_TRANSIT') return data.fuel ? `Flight mode ${nav.flightMode}`
+    : `${nav.status === 'DOCKED' ? 'Docked at' : 'Orbiting'} ${nav.waypointSymbol}`;
+  if (data?.cargo) return `Cargo hold ${data.cargo.units}/${data.cargo.capacity}`;
   return 'Action completed';
 }
 
