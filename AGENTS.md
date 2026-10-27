@@ -39,7 +39,7 @@ api-docs/, pico/         # reference submodules; never edit
 |---|---|
 | `#/login` | `login.js`: token login, saved agents, server status, stats, announcements, links, leaderboard with saved agents marked |
 | `#/fleet` | `fleet.js`: agent summary, ship cards |
-| `#/fleet/:shipSymbol` | `ship-detail.js`: stored surveys, cargo valued at the local market |
+| `#/fleet/:shipSymbol` | `ship-detail.js`: stored surveys, registration, crew, part specs and requirements, cargo valued at the local market |
 | `#/contracts` | `contracts.js` |
 | `#/system`, `#/system/:systemSymbol` | `system.js`: map, waypoint cards filtered by type and trait |
 | `#/system/:systemSymbol/waypoint/:waypointSymbol` | `waypoint-detail.js`: market, shipyard with ship specs, jump gate, construction |

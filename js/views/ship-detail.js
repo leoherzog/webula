@@ -1,7 +1,7 @@
-// Ship detail view: navigation, status, stored surveys, frame, cargo valued at the current market, modules and mounts cards, with the actions from ship-actions.js in each card's footer.
+// Ship detail view: navigation, status, stored surveys, registration, crew, frame, reactor, engine, cargo valued at the current market, and expandable modules and mounts, with the actions from ship-actions.js in each card's footer.
 import { endpoints, orNull } from '../api.js';
 import { addDiscoveredSystem } from '../state.js';
-import { getMain, withLoading, navStatusLabel, systemFromWaypoint, escapeHtml, credits } from '../components/loading.js';
+import { getMain, withLoading, navStatusLabel, systemFromWaypoint, escapeHtml, credits, factionLink } from '../components/loading.js';
 import { icon, SHIP_FRAMES } from '../icons.js';
 import { startRefresh } from '../refresh.js';
 import { animateCountdowns } from '../components/countdown.js';
@@ -10,12 +10,59 @@ import { shipActions, bindShipActions } from './ship-actions.js';
 const footer = (html) => (html ? `<footer>${html}</footer>` : '');
 const waypointLink = (symbol) => `<a href="#/system/${systemFromWaypoint(symbol)}/waypoint/${symbol}">${symbol}</a>`;
 const percent = (n) => `${Math.round(n * 100)}%`;
+const formatTime = (iso) => new Date(iso).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+const pill = (html) => `<mark class="pico-background-slate-600">${html}</mark>`;
+/** A <dt>/<dd> pair for an HTML value, or '' when the value is empty. */
+const row = (label, value) => (value ? `<dt>${label}</dt><dd>${value}</dd>` : '');
+
+/** ShipRequirements as "1 power, 2 crew, 1 slot"; every field is optional, so it may return ''. */
+function requires(r) {
+  return [
+    r.power != null && `${r.power} power`,
+    r.crew != null && `${r.crew} crew`,
+    r.slots != null && `${r.slots} slot${r.slots === 1 ? '' : 's'}`,
+  ].filter(Boolean).join(', ');
+}
+
+/** The rows a frame, reactor and engine share. */
+const componentRows = (c) => `
+  <dt>Quality</dt><dd>${c.quality}</dd>
+  <dt>Condition</dt><dd>${percent(c.condition)}</dd>
+  <dt>Integrity</dt><dd>${percent(c.integrity)}</dd>
+  ${row('Requires', requires(c.requirements))}`;
+
+/**
+ * Installed modules or mounts, one <details> per symbol: name, count and stats in the summary; symbol, description, deposits and requirements inside.
+ * @param {Set<string>} openParts the data-part keys that were open in the previous render
+ */
+function partList(parts, shipSymbol, openParts) {
+  // Parts that share a symbol share every field, so duplicates collapse into one entry with a count.
+  return Object.values(Object.groupBy(parts, (p) => p.symbol)).map((group) => {
+    const p = group[0];
+    const key = `${shipSymbol} ${p.symbol}`;
+    const stats = [
+      group.length > 1 && pill(`×${group.length}`),
+      p.capacity != null && pill(`Capacity ${p.capacity}`),
+      p.range != null && pill(`Range ${p.range}`),
+      p.strength != null && pill(`Strength ${p.strength}`),
+    ].filter(Boolean).join(' ');
+    const facts = row('Deposits', p.deposits?.map((d) => pill(d)).join(' ')) + row('Requires', requires(p.requirements));
+    return `
+      <details data-part="${key}"${openParts.has(key) ? ' open' : ''}>
+        <summary role="button" class="outline secondary">${escapeHtml(p.name)} ${stats}</summary>
+        <p><small>${p.symbol}</small>${p.description ? `<br>${escapeHtml(p.description)}` : ''}</p>
+        ${facts && `<dl>${facts}</dl>`}
+      </details>`;
+  }).join('') || '<p>None</p>';
+}
 
 export async function render(params) {
   const main = getMain();
+  // Read before withLoading's spinner replaces the page, so open parts also survive the refresh after an action.
+  const openParts = new Set([...main.querySelectorAll('details[open][data-part]')].map((d) => d.dataset.part));
   const ok = await withLoading(main, async () => {
     const { data: ship } = await endpoints.shipDetail(params.shipSymbol);
-    const { nav, cooldown } = ship;
+    const { nav, cooldown, crew, registration } = ship;
     addDiscoveredSystem(nav.systemSymbol);
     const waypoint = nav.status === 'IN_TRANSIT'
       ? null
@@ -35,6 +82,7 @@ export async function render(params) {
     const cooldownBar = cooldown.remainingSeconds > 0
       ? `<progress value="0" max="1" data-start="${new Date(Date.parse(cooldown.expiration) - cooldown.totalSeconds * 1000).toISOString()}" data-end="${cooldown.expiration}" data-done="Ready"></progress> <small></small>`
       : '<progress value="1" max="1"></progress> <small>Ready</small>';
+    const { consumed } = ship.fuel;
     const valueCells = (item) => {
       if (!valued.length) return '';
       const price = prices.get(item.symbol);
@@ -42,15 +90,11 @@ export async function render(params) {
     };
     // The symbol and its actions share the leading cell so both stay in view when the table scrolls on a phone.
     const cargoRows = ship.cargo.inventory.map((item) =>
-      `<tr><td>${item.symbol}${a.cargo(item)}</td><td>${escapeHtml(item.name)}</td><td>${item.units}</td>${valueCells(item)}</tr>`,
+      `<tr><td>${item.symbol}${a.cargo(item)}</td><td>${escapeHtml(item.name)}<br><small>${escapeHtml(item.description)}</small></td><td>${item.units}</td>${valueCells(item)}</tr>`,
     ).join('') || '<tr><td colspan="3">Empty</td></tr>';
     const worth = valued.length
       ? ` · <i class="fa-solid fa-coins"></i> ≈${credits(valued.reduce((sum, i) => sum + prices.get(i.symbol) * i.units, 0))}`
       : '';
-    const moduleRows = ship.modules.map((m) => `<tr><td>${m.symbol}</td><td>${escapeHtml(m.name)}</td><td>${m.capacity ?? '-'}</td></tr>`).join('')
-      || '<tr><td colspan="3">None</td></tr>';
-    const mountRows = ship.mounts.map((m) => `<tr><td>${m.symbol}</td><td>${escapeHtml(m.name)}</td><td>${m.strength ?? '-'}</td></tr>`).join('')
-      || '<tr><td colspan="3">None</td></tr>';
 
     main.innerHTML = `<div>
       <nav aria-label="breadcrumb">
@@ -75,6 +119,7 @@ export async function render(params) {
           <header>Status</header>
           <dl>
             <dt>Fuel</dt><dd><progress value="${ship.fuel.current}" max="${ship.fuel.capacity}"></progress> ${ship.fuel.current} / ${ship.fuel.capacity}</dd>
+            ${row('Fuel Used', consumed && `${consumed.amount} at ${formatTime(consumed.timestamp)}`)}
             <dt>Cooldown</dt><dd>${cooldownBar}</dd>
           </dl>
           ${footer(a.status)}
@@ -86,28 +131,53 @@ export async function render(params) {
       </article>`}
       <div class="grid">
         <article>
+          <header>Registration</header>
+          <dl>
+            <dt>Name</dt><dd>${escapeHtml(registration.name)}</dd>
+            <dt>Faction</dt><dd>${factionLink(registration.factionSymbol)}</dd>
+            <dt>Role</dt><dd>${registration.role}</dd>
+          </dl>
+        </article>
+        <article>
+          <header>Crew</header>
+          <dl>
+            <dt>Members</dt><dd>${crew.current} / ${crew.capacity}</dd>
+            <dt>Required</dt><dd>${crew.required}</dd>
+            <dt>Morale</dt><dd><progress value="${crew.morale}" max="100"></progress> ${crew.morale} / 100</dd>
+            <dt>Rotation</dt><dd>${crew.rotation}</dd>
+            <dt>Wages</dt><dd>${credits(crew.wages)} per member per hour</dd>
+          </dl>
+        </article>
+      </div>
+      <div class="grid">
+        <article>
           <header>Frame</header>
+          <p>${escapeHtml(ship.frame.description)}</p>
           <dl>
             <dt>Type</dt><dd>${icon(SHIP_FRAMES, ship.frame.symbol)} ${escapeHtml(ship.frame.name)}</dd>
-            <dt>Condition</dt><dd>${percent(ship.frame.condition)}</dd>
-            <dt>Integrity</dt><dd>${percent(ship.frame.integrity)}</dd>
+            <dt>Module Slots</dt><dd>${ship.frame.moduleSlots}</dd>
+            <dt>Mounting Points</dt><dd>${ship.frame.mountingPoints}</dd>
+            <dt>Fuel Capacity</dt><dd>${ship.frame.fuelCapacity}</dd>
+            ${componentRows(ship.frame)}
           </dl>
           ${footer(a.frame)}
         </article>
         <article>
           <header>Reactor</header>
+          <p>${escapeHtml(ship.reactor.description)}</p>
           <dl>
             <dt>Type</dt><dd>${escapeHtml(ship.reactor.name)}</dd>
             <dt>Power</dt><dd>${ship.reactor.powerOutput}</dd>
-            <dt>Condition</dt><dd>${percent(ship.reactor.condition)}</dd>
+            ${componentRows(ship.reactor)}
           </dl>
         </article>
         <article>
           <header>Engine</header>
+          <p>${escapeHtml(ship.engine.description)}</p>
           <dl>
             <dt>Type</dt><dd>${escapeHtml(ship.engine.name)}</dd>
             <dt>Speed</dt><dd>${ship.engine.speed}</dd>
-            <dt>Condition</dt><dd>${percent(ship.engine.condition)}</dd>
+            ${componentRows(ship.engine)}
           </dl>
         </article>
       </div>
@@ -121,22 +191,18 @@ export async function render(params) {
         </div>
         ${footer(a.buy)}
       </article>
-      <article>
-        <header>Modules (${ship.modules.length})</header>
-        <div class="overflow-auto"><table>
-          <thead><tr><th>Symbol</th><th>Name</th><th>Capacity</th></tr></thead>
-          <tbody>${moduleRows}</tbody>
-        </table></div>
-        ${footer(a.modules)}
-      </article>
-      <article>
-        <header>Mounts (${ship.mounts.length})</header>
-        <div class="overflow-auto"><table>
-          <thead><tr><th>Symbol</th><th>Name</th><th>Strength</th></tr></thead>
-          <tbody>${mountRows}</tbody>
-        </table></div>
-        ${footer(a.mounts)}
-      </article>
+      <div class="grid">
+        <article>
+          <header>Modules (${ship.modules.length})</header>
+          ${partList(ship.modules, ship.symbol, openParts)}
+          ${footer(a.modules)}
+        </article>
+        <article>
+          <header>Mounts (${ship.mounts.length})</header>
+          ${partList(ship.mounts, ship.symbol, openParts)}
+          ${footer(a.mounts)}
+        </article>
+      </div>
     </div>`;
 
     animateCountdowns();
