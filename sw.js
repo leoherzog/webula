@@ -37,6 +37,9 @@ const APP_SHELL = [
   '/js/views/contracts.js',
   '/js/views/system.js',
   '/js/views/waypoint-detail.js',
+  '/js/views/systems.js',
+  '/js/views/factions.js',
+  '/js/views/agents.js',
 ];
 
 self.addEventListener('install', (event) => {

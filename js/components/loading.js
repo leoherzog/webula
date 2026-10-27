@@ -1,5 +1,6 @@
 // Render helpers shared by views: the loading/error wrapper, HTML escaping, and small formatters.
 import { isRefreshing } from '../refresh.js';
+import { icon, FACTIONS } from '../icons.js';
 
 export function getMain() {
   return document.getElementById('app-main');
@@ -45,6 +46,15 @@ export function escapeHtml(str) {
 
 /** Formats a credit amount, such as ₵1,234. */
 export const credits = (n) => `₵${Number(n).toLocaleString()}`;
+
+/** A faction symbol with its icon, linked to its faction page. */
+export const factionLink = (symbol) => `<a href="#/factions/${symbol}">${icon(FACTIONS, symbol)} ${symbol}</a>`;
+
+/** An escaped agent symbol linked to its public profile; a symbol outside the router's [\w-]+ charset stays plain text. */
+export function agentLink(symbol) {
+  const text = escapeHtml(symbol);
+  return /^[\w-]+$/.test(symbol) ? `<a href="#/agents/${symbol}">${text}</a>` : text;
+}
 
 export function systemFromWaypoint(waypointSymbol) {
   const parts = waypointSymbol.split('-');

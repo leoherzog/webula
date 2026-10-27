@@ -1,8 +1,7 @@
 // Contracts view: one card per contract with accept, deliver and fulfill actions, plus negotiating a new contract.
 import { endpoints } from '../api.js';
-import { getMain, withLoading, systemFromWaypoint, credits } from '../components/loading.js';
+import { getMain, withLoading, systemFromWaypoint, credits, factionLink } from '../components/loading.js';
 import { paginationNav } from '../components/pagination.js';
-import { icon, FACTIONS } from '../icons.js';
 import { startRefresh } from '../refresh.js';
 import { performAction, openFormDialog, openDeliverDialog, confirmAction, showToast, busyFetch } from '../actions.js';
 
@@ -97,7 +96,7 @@ function renderContractCard(c) {
   const actions = renderActions(c);
   return `
     <article>
-      <header><strong>${c.type}</strong> &mdash; ${icon(FACTIONS, c.factionSymbol)} ${c.factionSymbol}</header>
+      <header><strong>${c.type}</strong> &mdash; ${factionLink(c.factionSymbol)}</header>
       <dl>
         <dt>Status</dt><dd>${statusText(c)}</dd>
         <dt>Deadline</dt><dd>${formatDate(terms.deadline)}</dd>

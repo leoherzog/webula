@@ -1,8 +1,8 @@
 // Login view: sign in with a pasted or saved agent token; below it, the public server status, stats, announcements, links and leaderboards, with saved agents marked.
 import { endpoints } from '../api.js';
-import { setToken, setAgent, clearToken, getTokenHistory, addTokenHistory, removeTokenHistory } from '../state.js';
+import { getToken, setToken, setAgent, clearToken, getTokenHistory, addTokenHistory, removeTokenHistory } from '../state.js';
 import { navigate } from '../router.js';
-import { getMain, escapeHtml, credits } from '../components/loading.js';
+import { getMain, escapeHtml, credits, agentLink } from '../components/loading.js';
 import { renderNav } from '../components/nav.js';
 import { confirmAction } from '../actions.js';
 
@@ -144,9 +144,10 @@ function linksList(links) {
 /** One leaderboard table, with the user's saved agents marked; empty when the API omits the list. */
 function leaderboardCard(title, scoreLabel, entries, score, saved) {
   if (!Array.isArray(entries)) return '';
-  const agent = (symbol) => saved.has(symbol)
-    ? `<mark class="pico-background-azure-550" title="Saved agent">${escapeHtml(symbol)}</mark>`
-    : escapeHtml(symbol);
+  // Agent routes are guarded, so a logged-out user gets plain names.
+  const name = getToken() ? agentLink : escapeHtml;
+  // A bare <mark> keeps the link readable; Pico's azure link text vanishes on an azure-550 background.
+  const agent = (symbol) => saved.has(symbol) ? `<mark title="Saved agent">${name(symbol)}</mark>` : name(symbol);
   const body = entries.length ? `
     <div class="overflow-auto">
       <table class="striped">

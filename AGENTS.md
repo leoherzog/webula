@@ -1,6 +1,6 @@
 # Webula
 
-Webula is a static web client for the [SpaceTraders API v2](https://spacetraders.io/). It shows the agent, fleet, contracts, systems and waypoints, and sends ship, cargo, contract, shipyard and construction actions.
+Webula is a static web client for the [SpaceTraders API v2](https://spacetraders.io/). It shows the agent, fleet, contracts, systems, waypoints, factions and other agents, and sends ship, cargo, contract, shipyard and construction actions.
 
 It is vanilla ES modules with no build step and no `package.json`. Pico CSS and `pico.colors.min.css` load from jsdelivr at the `@2` range, Sigma.js 3.0.3 and Graphology 0.26.0 at exact versions, and Font Awesome 7 Pro loads from its kit script. The token and small caches live in `localStorage`. Serve the repo root over HTTP, because ES modules fail under `file://` and `sw.js` and `manifest.json` use root-absolute paths.
 
@@ -22,13 +22,13 @@ js/
   refresh.js             # 30 s polling
   offline.js             # offline badge, Last updated footer
   components/
-    loading.js           # withLoading, escapeHtml, navStatusLabel, credits
+    loading.js           # withLoading, escapeHtml, navStatusLabel, credits, factionLink, agentLink
     countdown.js         # countdown <progress> bars
     pagination.js        # previous/next links
     nav.js               # top nav and agent menu
     server-reset.js      # footer countdown to the next server reset
     system-map.js        # Sigma map of one system
-  views/                 # one module per route; ship-actions.js serves ship-detail.js
+  views/                 # one module per route or list-and-detail pair; ship-actions.js serves ship-detail.js
 scripts/verify_icons.py  # checks icons.json against the spec's enums
 api-docs/, pico/         # reference submodules; never edit
 ```
@@ -43,6 +43,9 @@ api-docs/, pico/         # reference submodules; never edit
 | `#/contracts` | `contracts.js` |
 | `#/system`, `#/system/:systemSymbol` | `system.js`: map, waypoint cards filtered by type and trait |
 | `#/system/:systemSymbol/waypoint/:waypointSymbol` | `waypoint-detail.js`: market, shipyard with ship specs, jump gate, construction |
+| `#/systems` | `systems.js`: every system, paginated |
+| `#/factions`, `#/factions/:factionSymbol` | `factions.js`: faction cards, or one faction with its trait descriptions |
+| `#/agents`, `#/agents/:agentSymbol` | `agents.js`: every agent, paginated, or one agent's public profile |
 
 `guard()` protects every route but login. An unmatched hash goes to `#/fleet`, or to `#/login` without a token. Route params match `[\w-]+`, so they are safe in HTML. Paginated views keep the page in the hash query as `page=N`, which handlers receive as `params.page`.
 
@@ -52,7 +55,7 @@ Handlers also receive `params.query`, the hash's `URLSearchParams`, whose values
 
 - `render(params)` wraps its work in `withLoading(getMain(), fn)`, which shows the spinner, renders errors, and adds a login link on a 401.
 - A route change aborts the previous view's GETs. `withLoading` then returns false and writes nothing, leaving `aria-busy` on `#app-main` for the next view's spinner. A view that writes `#app-main` without `withLoading`, like login, must remove `aria-busy` itself.
-- Fleet, contracts, ship detail and waypoint detail poll every 30 s, calling `startRefresh(() => render(params))` only when `withLoading` returned true. A poll keeps the old content on any error but 401.
+- Fleet, contracts, ship detail and waypoint detail poll every 30 s, calling `startRefresh(() => render(params))` only when `withLoading` returned true. A poll keeps the old content on any error but 401. Systems, factions and agents show static data and don't poll.
 - Build the page HTML in one template and assign it once. A poll thus closes open `<details>`, so waypoint detail reopens the shipyard ships that were open in the old DOM.
 - Put action buttons in the card's `<footer>`, and omit the footer when it would be empty.
 - Bind delegated listeners to an element the render created, never to `#app-main`, which outlives renders and would gain a listener per poll.
@@ -78,6 +81,7 @@ Handlers also receive `params.query`, the hash's `URLSearchParams`, whose values
 - Responses are `{ data, meta? }`, where `meta` has `total`, `page` and `limit`. `GET /` is unwrapped, and a 204 becomes `{ data: null }`.
 - Errors carry `message`, `status` and the API's numeric error `code`.
 - List pages hold at most 20 items. `allShips()` and `systemMarkets()` walk them all and return plain arrays.
+- The live API returns a faction's `headquarters` as a system symbol, though the spec calls it a waypoint, so `factions.js` links either. An agent's `headquarters` is a waypoint.
 
 ## Service worker
 
@@ -116,6 +120,8 @@ Handlers also receive `params.query`, the hash's `URLSearchParams`, whose values
 - Color with `pico-color-{family}-{shade}` and `pico-background-{family}-{shade}`, never a literal.
 - `manifest.json`, the theme-color meta and the icons cannot read CSS, so they use palette hex: azure-500 `#017fc0` on slate-950 `#0e1118`.
 - A pill is a `<mark>`: bare for a highlight, or with a `pico-background-*` class. Separate pills with spaces. `navStatusLabel(status)` renders ship status.
+- Never put a link inside a `pico-background-azure-*` pill, because Pico's link color matches it. Use a bare `<mark>` or set the pill beside the link.
+- Render faction symbols with `factionLink(symbol)` and agent symbols with `agentLink(symbol)`, which escapes and leaves a symbol outside `[\w-]+` as plain text. Agent routes are guarded, so login links leaderboard names only when a token is stored.
 - Progress bars are plain `<progress>`. Countdown bars carry `data-start`, `data-end` and `data-done`, and `animateCountdowns()` writes into the `<small>` that follows.
 - Toasts use `showToast(message, 'ins' | 'del')`.
 - Format credits with `credits(n)` from `loading.js`.

@@ -1,10 +1,10 @@
 // Fleet view: the agent summary and a paginated grid of ship cards with orbit, dock and navigate buttons.
 import { endpoints } from '../api.js';
 import { getAgent, setAgent, addDiscoveredSystem } from '../state.js';
-import { getMain, withLoading, navStatusLabel, systemFromWaypoint, escapeHtml, credits } from '../components/loading.js';
+import { getMain, withLoading, navStatusLabel, systemFromWaypoint, credits, factionLink, agentLink } from '../components/loading.js';
 import { renderNav } from '../components/nav.js';
 import { paginationNav } from '../components/pagination.js';
-import { icon, SHIP_FRAMES, FACTIONS } from '../icons.js';
+import { icon, SHIP_FRAMES } from '../icons.js';
 import { startRefresh } from '../refresh.js';
 import { animateCountdowns } from '../components/countdown.js';
 import { performAction, openNavigateDialog } from '../actions.js';
@@ -27,8 +27,8 @@ export async function render(params) {
     main.innerHTML = `
       <article>
         <dl class="grid">
-          <div><dt>Symbol</dt><dd>${escapeHtml(agent.symbol)}</dd></div>
-          <div><dt>Faction</dt><dd>${icon(FACTIONS, agent.startingFaction)} ${agent.startingFaction}</dd></div>
+          <div><dt>Symbol</dt><dd>${agentLink(agent.symbol)}</dd></div>
+          <div><dt>Faction</dt><dd>${factionLink(agent.startingFaction)}</dd></div>
           <div><dt>Headquarters</dt><dd><a href="#/system/${hqSystem}/waypoint/${agent.headquarters}">${agent.headquarters}</a></dd></div>
           <div><dt>Credits</dt><dd>${credits(agent.credits)}</dd></div>
         </dl>

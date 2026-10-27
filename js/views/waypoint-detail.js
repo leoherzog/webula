@@ -1,8 +1,8 @@
 // Waypoint detail view: type, traits and orbitals, plus the market, shipyard, jump gate and construction site when the waypoint has them.
 import { endpoints, orNull } from '../api.js';
 import { addDiscoveredSystem } from '../state.js';
-import { getMain, withLoading, escapeHtml, systemFromWaypoint, credits } from '../components/loading.js';
-import { icon, WAYPOINT_TYPES, FACTIONS, SHIP_FRAMES } from '../icons.js';
+import { getMain, withLoading, escapeHtml, systemFromWaypoint, credits, factionLink } from '../components/loading.js';
+import { icon, WAYPOINT_TYPES, SHIP_FRAMES } from '../icons.js';
 import { startRefresh } from '../refresh.js';
 import { performAction, confirmAction, busyFetch, openDeliverDialog } from '../actions.js';
 
@@ -56,7 +56,7 @@ export async function render(params) {
             <dl>
               <dt>Type</dt><dd>${icon(WAYPOINT_TYPES, wp.type)} ${escapeHtml(wp.type)}</dd>
               <dt>Position</dt><dd>(${wp.x}, ${wp.y})</dd>
-              ${wp.faction?.symbol ? `<dt>Faction</dt><dd>${icon(FACTIONS, wp.faction.symbol)} ${escapeHtml(wp.faction.symbol)}</dd>` : ''}
+              ${wp.faction?.symbol ? `<dt>Faction</dt><dd>${factionLink(wp.faction.symbol)}</dd>` : ''}
               ${wp.orbits ? `<dt>Orbits</dt><dd><a href="#/system/${systemSymbol}/waypoint/${wp.orbits}">${escapeHtml(wp.orbits)}</a></dd>` : ''}
               ${isUnderConstruction ? '<dt>Construction</dt><dd><mark>Under Construction</mark></dd>' : ''}
             </dl>

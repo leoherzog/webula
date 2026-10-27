@@ -11,6 +11,9 @@ import { render as shipDetailView } from './views/ship-detail.js';
 import { render as contractsView } from './views/contracts.js';
 import { render as systemView } from './views/system.js';
 import { render as waypointDetailView } from './views/waypoint-detail.js';
+import { render as systemsView } from './views/systems.js';
+import { render as factionsView } from './views/factions.js';
+import { render as agentsView } from './views/agents.js';
 
 function guard(viewFn) {
   return (params) => {
@@ -30,6 +33,11 @@ addRoute('/contracts', guard(contractsView));
 addRoute('/system', guard(systemView));
 addRoute('/system/:systemSymbol', guard(systemView));
 addRoute('/system/:systemSymbol/waypoint/:waypointSymbol', guard(waypointDetailView));
+addRoute('/systems', guard(systemsView));
+addRoute('/factions', guard(factionsView));
+addRoute('/factions/:factionSymbol', guard(factionsView));
+addRoute('/agents', guard(agentsView));
+addRoute('/agents/:agentSymbol', guard(agentsView));
 
 initOffline();
 initServerReset();

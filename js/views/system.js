@@ -2,9 +2,9 @@
 // Each card's Navigate Here menu lists the ships orbiting elsewhere in the system, nearest first.
 import { endpoints, orNull } from '../api.js';
 import { getAgent, addDiscoveredSystem, getDiscoveredSystems } from '../state.js';
-import { getMain, withLoading, escapeHtml, systemFromWaypoint } from '../components/loading.js';
+import { getMain, withLoading, escapeHtml, systemFromWaypoint, factionLink } from '../components/loading.js';
 import { paginationNav } from '../components/pagination.js';
-import { icon, WAYPOINT_TYPES, FACTIONS, STAR_TYPES } from '../icons.js';
+import { icon, WAYPOINT_TYPES, STAR_TYPES } from '../icons.js';
 import { renderSystemMap } from '../components/system-map.js';
 import { performAction } from '../actions.js';
 
@@ -47,6 +47,7 @@ export async function render(params) {
         <input type="text" name="system" list="discovered-systems" placeholder="Jump to system (e.g. X1-DF55)" required pattern="\\s*[\\w\\-]+\\s*">
         <button type="submit">Go</button>
       </form>
+      <p><a href="#/systems"><i class="fa-solid fa-list"></i> All systems</a></p>
       <datalist id="discovered-systems">${getDiscoveredSystems().map((s) => `<option value="${escapeHtml(s)}">`).join('')}</datalist>
       <form role="group">
         ${filterSelect('type', 'Waypoint type', 'All types', filters.type)}
@@ -118,7 +119,7 @@ function waypointCard(wp, systemSymbol, orbiting) {
       <dl>
         <dt>Position</dt><dd>(${wp.x}, ${wp.y})</dd>
         <dt>Traits</dt><dd>${traits}</dd>
-        ${wp.faction ? `<dt>Faction</dt><dd>${icon(FACTIONS, wp.faction.symbol)} ${wp.faction.symbol}</dd>` : ''}
+        ${wp.faction ? `<dt>Faction</dt><dd>${factionLink(wp.faction.symbol)}</dd>` : ''}
       </dl>
       ${senders.length ? `
         <footer>

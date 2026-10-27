@@ -96,6 +96,11 @@ export const endpoints = {
     api.get(`/systems/${system}/waypoints/${waypoint}/jump-gate`),
   waypointConstruction: (system, waypoint) =>
     api.get(`/systems/${system}/waypoints/${waypoint}/construction`),
+  systems: (page) => fetchPage('/systems', page),
+  factions: (page) => fetchPage('/factions', page),
+  faction: (symbol) => api.get(`/factions/${symbol}`),
+  agents: (page) => fetchPage('/agents', page),
+  agent: (symbol) => api.get(`/agents/${symbol}`),
   // Contracts
   acceptContract: (contractId) => api.post(`/my/contracts/${contractId}/accept`),
   deliverContract: (contractId, body) => api.post(`/my/contracts/${contractId}/deliver`, body),
