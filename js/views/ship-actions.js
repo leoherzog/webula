@@ -57,7 +57,7 @@ export function shipActions(ship, waypoint, market) {
   const button = (action, label, cls = '', cooldown = false, attrs = '') =>
     `<button type="button"${cls && ` class="${cls}"`} data-action="${action}"${attrs}${cooldown ? ` data-cooldown${coolingDown ? ' disabled' : ''}` : ''}>${label}</button>`;
   const iconButton = (item, action, label, icon, cls) =>
-    `<button type="button" class="${cls}" data-action="${action}" data-symbol="${item.symbol}" data-units="${item.units}" aria-label="${label}" title="${label}"><i class="fa-solid ${icon}"></i></button>`;
+    `<button type="button" class="${cls}" data-action="${action}" data-symbol="${item.symbol}" data-units="${item.units}" aria-label="${label}" data-tooltip="${label}" data-placement="right"><i class="fa-solid ${icon}"></i></button>`;
   // A deposit listed more than once is likelier to be extracted, so repeats show as a count.
   const deposits = (survey) => Object.entries(Object.groupBy(survey.deposits, (d) => d.symbol))
     .map(([symbol, list]) => pill(`${escapeHtml(symbol)}${list.length > 1 ? ` ×${list.length}` : ''}`)).join(' ');

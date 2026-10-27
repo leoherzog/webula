@@ -37,7 +37,7 @@ export async function render() {
       ${history.map((h) => `
         <p>
           <button type="button" class="outline" data-login="${escapeHtml(h.token)}">${escapeHtml(h.symbol)}</button>
-          <button type="button" class="outline secondary" data-remove="${escapeHtml(h.token)}" data-symbol="${escapeHtml(h.symbol)}" aria-label="Forget ${escapeHtml(h.symbol)}" title="Forget ${escapeHtml(h.symbol)}"><i class="fa-solid fa-trash-can pico-color-red-500"></i></button>
+          <button type="button" class="outline secondary" data-remove="${escapeHtml(h.token)}" data-symbol="${escapeHtml(h.symbol)}" aria-label="Forget ${escapeHtml(h.symbol)}" data-tooltip="Forget ${escapeHtml(h.symbol)}"><i class="fa-solid fa-trash-can pico-color-red-500"></i></button>
         </p>`).join('')}` : '';
   }
   renderSavedTokens();

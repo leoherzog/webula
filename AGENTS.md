@@ -109,10 +109,10 @@ Handlers also receive `params.query`, the hash's `URLSearchParams`, whose values
 - A card is an `<article>` with a `<header>`, and its actions go in a `<footer>`. Card lists use `<div class="grid grid-3">`.
 - `aria-busy="true"` shows Pico's spinner.
 - `.outline` and `.secondary` mark lesser buttons. Destructive actions are `outline secondary` with a red `fa-trash-can`, behind a `confirmAction`.
-- `<div role="group">` joins controls. Icon-only buttons need `aria-label` and `title`.
+- `<div role="group">` joins controls. Icon-only buttons need `aria-label` and a matching `data-tooltip`, not `title`, which would show a second tooltip.
 - Dropdowns are `<details class="dropdown">`. Use `<summary role="button">` for a button-styled trigger and `<ul dir="rtl">` to right-align the menu.
 - An accordion is a plain `<details>`. Give its `<summary>` `role="button"` when it holds pills that may wrap, because Pico sets a bare summary's line height to 1rem and wrapped pills overlap.
-- Wrap wide tables in `.overflow-auto`. Keep dropdowns and `data-tooltip` out of it, because it clips them.
+- Wrap wide tables in `.overflow-auto`. Keep dropdowns out of it, because it clips them. A `data-tooltip` inside it sits in the leading column with `data-placement="right"`, so it opens over the row instead of past the edge.
 - Color with `pico-color-{family}-{shade}` and `pico-background-{family}-{shade}`, never a literal.
 - `manifest.json`, the theme-color meta and the icons cannot read CSS, so they use palette hex: azure-500 `#017fc0` on slate-950 `#0e1118`.
 - A pill is a `<mark>`: bare for a highlight, or with a `pico-background-*` class. Separate pills with spaces. `navStatusLabel(status)` renders ship status.
