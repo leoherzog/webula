@@ -101,6 +101,8 @@ export const endpoints = {
   faction: (symbol) => api.get(`/factions/${symbol}`),
   agents: (page) => fetchPage('/agents', page),
   agent: (symbol) => api.get(`/agents/${symbol}`),
+  // data.exportToImportMap maps each exported good to the imports that produce it.
+  supplyChain: () => api.get('/market/supply-chain'),
   // Contracts
   acceptContract: (contractId) => api.post(`/my/contracts/${contractId}/accept`),
   deliverContract: (contractId, body) => api.post(`/my/contracts/${contractId}/deliver`, body),

@@ -42,7 +42,7 @@ api-docs/, pico/         # reference submodules; never edit
 | `#/fleet/:shipSymbol` | `ship-detail.js`: stored surveys, registration, crew, part specs and requirements, cargo valued at the local market |
 | `#/contracts` | `contracts.js` |
 | `#/system`, `#/system/:systemSymbol` | `system.js`: map, waypoint cards filtered by type and trait |
-| `#/system/:systemSymbol/waypoint/:waypointSymbol` | `waypoint-detail.js`: market, shipyard with ship specs, jump gate, construction |
+| `#/system/:systemSymbol/waypoint/:waypointSymbol` | `waypoint-detail.js`: market with supply chain, shipyard with ship specs, recent transactions, jump gate, construction |
 | `#/systems` | `systems.js`: every system, paginated |
 | `#/factions`, `#/factions/:factionSymbol` | `factions.js`: faction cards, or one faction with its trait descriptions |
 | `#/agents`, `#/agents/:agentSymbol` | `agents.js`: every agent, paginated, or one agent's public profile |
@@ -56,7 +56,8 @@ Handlers also receive `params.query`, the hash's `URLSearchParams`, whose values
 - `render(params)` wraps its work in `withLoading(getMain(), fn)`, which shows the spinner, renders errors, and adds a login link on a 401.
 - A route change aborts the previous view's GETs. `withLoading` then returns false and writes nothing, leaving `aria-busy` on `#app-main` for the next view's spinner. A view that writes `#app-main` without `withLoading`, like login, must remove `aria-busy` itself.
 - Fleet, contracts, ship detail and waypoint detail poll every 30 s, calling `startRefresh(() => render(params))` only when `withLoading` returned true. A poll keeps the old content on any error but 401. Systems, factions and agents show static data and don't poll.
-- Build the page HTML in one template and assign it once. A poll thus closes open `<details>`, so waypoint detail reopens the shipyard ships that were open in the old DOM.
+- Build the page HTML in one template and assign it once. A render thus closes open `<details>`, so ship detail and waypoint detail key theirs and reopen the keys that were open. Read the keys before `withLoading`, whose spinner replaces the page on the refresh after an action, and scope them to the page's symbol so another ship or waypoint doesn't inherit them.
+- Data fixed for a server reset, like the supply chain, is memoized at module level after the first success. A failure is not cached.
 - Put action buttons in the card's `<footer>`, and omit the footer when it would be empty.
 - Bind delegated listeners to an element the render created, never to `#app-main`, which outlives renders and would gain a listener per poll.
 

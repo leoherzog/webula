@@ -1,14 +1,26 @@
 // Waypoint detail view: type, traits and orbitals, plus the market, shipyard, jump gate and construction site when the waypoint has them.
+// Market goods show their supply-chain links, and the market and shipyard list their recent transactions.
 import { endpoints, orNull } from '../api.js';
 import { addDiscoveredSystem } from '../state.js';
-import { getMain, withLoading, escapeHtml, systemFromWaypoint, credits, factionLink } from '../components/loading.js';
+import { getMain, withLoading, escapeHtml, systemFromWaypoint, credits, factionLink, agentLink } from '../components/loading.js';
 import { icon, WAYPOINT_TYPES, SHIP_FRAMES } from '../icons.js';
 import { startRefresh } from '../refresh.js';
 import { performAction, confirmAction, busyFetch, openDeliverDialog } from '../actions.js';
 
+// The supply chain is fixed within a server reset, so the first successful fetch serves every later render and poll.
+let supplyChain = null;
+
+/** The export-to-import map, or null when the fetch fails; a failure is not cached. */
+async function getSupplyChain() {
+  supplyChain ??= (await orNull(endpoints.supplyChain()))?.data?.exportToImportMap ?? null;
+  return supplyChain;
+}
+
 export async function render(params) {
   const { systemSymbol, waypointSymbol } = params;
   const main = getMain();
+  // Read before withLoading's spinner replaces the page, so expanded sections also survive the refresh after an action; another waypoint's page contributes none.
+  const openKeys = new Set([...main.querySelectorAll(`[data-waypoint="${waypointSymbol}"] details[open][data-key]`)].map((d) => d.dataset.key));
   const ok = await withLoading(main, async () => {
     const { data: wp } = await endpoints.waypointDetail(systemSymbol, waypointSymbol);
 
@@ -17,11 +29,12 @@ export async function render(params) {
     const isJumpGate = wp.type === 'JUMP_GATE';
     const isUnderConstruction = wp.isUnderConstruction;
 
-    const [marketRes, shipyardRes, jumpGateRes, constructionRes] = await Promise.all([
+    const [marketRes, shipyardRes, jumpGateRes, constructionRes, chain] = await Promise.all([
       hasMarket ? orNull(endpoints.waypointMarket(systemSymbol, waypointSymbol)) : null,
       hasShipyard ? orNull(endpoints.waypointShipyard(systemSymbol, waypointSymbol)) : null,
       isJumpGate ? orNull(endpoints.waypointJumpGate(systemSymbol, waypointSymbol)) : null,
       isUnderConstruction ? orNull(endpoints.waypointConstruction(systemSymbol, waypointSymbol)) : null,
+      hasMarket ? getSupplyChain() : null,
     ]);
 
     addDiscoveredSystem(systemSymbol);
@@ -38,11 +51,8 @@ export async function render(params) {
       `<li><a href="#/system/${systemSymbol}/waypoint/${o.symbol}">${escapeHtml(o.symbol)}</a></li>`
     ).join('') || '';
 
-    // A poll replaces the page, so the shipyard ships the user expanded stay open by type.
-    const openShips = new Set([...main.querySelectorAll('details[open] [data-action="buy-ship"]')].map((b) => b.dataset.type));
-
     main.innerHTML = `
-      <div>
+      <div data-waypoint="${waypointSymbol}">
         <nav aria-label="breadcrumb">
           <ul>
             <li><a href="#/system/${systemSymbol}">${escapeHtml(systemSymbol)}</a></li>
@@ -96,14 +106,14 @@ export async function render(params) {
         ${marketRes ? `
           <article>
             <header>Marketplace</header>
-            ${renderMarketData(marketRes.data)}
+            ${renderMarketData(marketRes.data, chain, openKeys)}
           </article>
         ` : ''}
 
         ${shipyardRes ? `
           <article>
             <header>Shipyard</header>
-            ${renderShipyardData(shipyardRes.data, openShips)}
+            ${renderShipyardData(shipyardRes.data, openKeys)}
           </article>
         ` : ''}
 
@@ -143,32 +153,84 @@ export async function render(params) {
   if (ok) startRefresh(() => render(params));
 }
 
-function renderMarketData(market) {
-  const goods = market.tradeGoods;
-  if (!goods || goods.length === 0) {
-    const sections = [];
-    if (market.exports?.length) sections.push(`<dt>Exports</dt><dd>${market.exports.map(g => g.symbol).join(', ')}</dd>`);
-    if (market.imports?.length) sections.push(`<dt>Imports</dt><dd>${market.imports.map(g => g.symbol).join(', ')}</dd>`);
-    if (market.exchange?.length) sections.push(`<dt>Exchange</dt><dd>${market.exchange.map(g => g.symbol).join(', ')}</dd>`);
-    if (sections.length === 0) return '<p>No market data (ship must be present for prices).</p>';
-    return `<dl>${sections.join('')}</dl>`;
-  }
+/** Attributes for a <details> that the next poll reopens when it is open now; keys are unique on the page. */
+const keepOpen = (openKeys, key) => ` data-key="${key}"${openKeys.has(key) ? ' open' : ''}`;
 
+const formatTime = (iso) => new Date(iso).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+
+/**
+ * A collapsible table of transactions, newest first.
+ * @param {(t: object) => string[]} cells one transaction's cells after the time.
+ */
+function transactionTable(openKeys, key, title, headers, transactions, cells) {
+  const rows = transactions.toSorted((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp))
+    .map((t) => `<tr><td>${formatTime(t.timestamp)}</td>${cells(t).map((c) => `<td>${c}</td>`).join('')}</tr>`).join('');
+  return `
+    <details${keepOpen(openKeys, key)}>
+      <summary>${title} (${transactions.length})</summary>
+      <div class="overflow-auto">
+        <table>
+          <thead><tr><th>Time</th>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </details>
+  `;
+}
+
+/**
+ * A good's supply-chain note: an export's inputs, or the exports here that an import feeds.
+ * @returns {string} a <small> note, or '' for exchange goods, unlinked goods, or a null chain.
+ */
+function chainNote(chain, market, symbol, type) {
+  const goods = !chain ? []
+    : type === 'EXPORT' ? chain[symbol] ?? []
+    : type === 'IMPORT' ? market.exports.filter((e) => chain[e.symbol]?.includes(symbol)).map((e) => e.symbol)
+    : [];
+  return goods.length ? `<small>${type === 'EXPORT' ? 'made from' : 'feeds'} ${escapeHtml(goods.join(', '))}</small>` : '';
+}
+
+/** Marketplace card body: priced goods when a ship of yours is present, else the export, import and exchange lists, then recent trades. */
+function renderMarketData(market, chain, openKeys) {
+  const note = (symbol, type) => chainNote(chain, market, symbol, type);
+  const goods = market.tradeGoods?.length ? tradeGoodsTable(market.tradeGoods, note) : marketLists(market, note);
+  // Ship symbols stay plain text, because most belong to other agents and #/fleet/:shipSymbol serves only yours.
+  const trades = market.transactions?.length
+    ? transactionTable(openKeys, 'market-transactions', 'Recent Trades', ['Ship', 'Type', 'Good', 'Units', 'Unit Price', 'Total'], market.transactions,
+      (t) => [escapeHtml(t.shipSymbol), t.type, escapeHtml(t.tradeSymbol), t.units, credits(t.pricePerUnit), credits(t.totalPrice)])
+    : '';
+  return goods + trades;
+}
+
+function marketLists(market, note) {
+  const list = (label, goods, type) => goods?.length
+    ? `<dt>${label}</dt><dd>${goods.map((g) => `<div>${g.symbol} ${note(g.symbol, type)}</div>`).join('')}</dd>`
+    : '';
+  const sections = list('Exports', market.exports, 'EXPORT') + list('Imports', market.imports, 'IMPORT') + list('Exchange', market.exchange, 'EXCHANGE');
+  return sections ? `<dl>${sections}</dl>` : '<p>No market data (ship must be present for prices).</p>';
+}
+
+/** The priced goods; the Supply Chain column shows only when some good has a note. */
+function tradeGoodsTable(goods, note) {
+  const notes = goods.map((g) => note(g.symbol, g.type));
+  const showChain = notes.some(Boolean);
   return `
     <div class="overflow-auto">
       <table>
         <thead>
-          <tr><th>Good</th><th>Type</th><th>Supply</th><th>Buy</th><th>Sell</th><th>Volume</th></tr>
+          <tr><th>Good</th><th>Type</th><th>Supply</th><th>Activity</th><th>Buy</th><th>Sell</th><th>Volume</th>${showChain ? '<th>Supply Chain</th>' : ''}</tr>
         </thead>
         <tbody>
-          ${goods.map(g => `
+          ${goods.map((g, i) => `
             <tr>
               <td>${g.symbol}</td>
               <td>${g.type}</td>
               <td>${g.supply}</td>
+              <td>${g.activity ?? ''}</td>
               <td>${credits(g.purchasePrice)}</td>
               <td>${credits(g.sellPrice)}</td>
               <td>${g.tradeVolume}</td>
+              ${showChain ? `<td>${notes[i]}</td>` : ''}
             </tr>
           `).join('')}
         </tbody>
@@ -177,15 +239,21 @@ function renderMarketData(market) {
   `;
 }
 
-/** Shipyard card body: the fee and ship types, then one expandable spec sheet per ship when a ship of yours is present. */
-function renderShipyardData(shipyard, openShips) {
+/** Shipyard card body: the fee and ship types, one expandable spec sheet per ship when a ship of yours is present, then recent purchases. */
+function renderShipyardData(shipyard, openKeys) {
   const typeBadges = shipyard.shipTypes.map(st =>
     `<mark class="pico-background-slate-600">${escapeHtml(st.type)}</mark>`
   ).join(' ');
 
   const ships = shipyard.ships?.length
-    ? shipyard.ships.map((s) => renderShipyardShip(s, openShips.has(s.type))).join('')
+    ? shipyard.ships.map((s) => renderShipyardShip(s, openKeys)).join('')
     : '<p>Ship details visible when a ship is present.</p>';
+
+  // ShipyardTransaction.shipSymbol is deprecated and holds the ship type anyway.
+  const purchases = shipyard.transactions?.length
+    ? transactionTable(openKeys, 'shipyard-transactions', 'Recent Purchases', ['Agent', 'Ship Type', 'Price'], shipyard.transactions,
+      (t) => [agentLink(t.agentSymbol), escapeHtml(t.shipType), credits(t.price)])
+    : '';
 
   return `
     <dl>
@@ -193,6 +261,7 @@ function renderShipyardData(shipyard, openShips) {
       <dt>Ship Types</dt><dd>${typeBadges}</dd>
     </dl>
     ${ships}
+    ${purchases}
   `;
 }
 
@@ -201,11 +270,11 @@ const partPills = (parts) => parts.map((p) =>
 ).join(' ') || 'None';
 
 /** One ShipyardShip as a <details>: price and supply in the summary, specs and the Buy button inside. */
-function renderShipyardShip(s, open) {
+function renderShipyardShip(s, openKeys) {
   // ShipModule.capacity also counts crew quarters, so cargo sums only the cargo holds.
   const cargo = s.modules.filter((m) => m.symbol.startsWith('MODULE_CARGO_HOLD')).reduce((sum, m) => sum + (m.capacity ?? 0), 0);
   return `
-    <details${open ? ' open' : ''}>
+    <details${keepOpen(openKeys, s.type)}>
       <summary role="button" class="outline secondary">
         ${icon(SHIP_FRAMES, s.frame.symbol)} ${escapeHtml(s.name)} ${credits(s.purchasePrice)}
         <mark class="pico-background-slate-600">Supply ${s.supply}</mark>
