@@ -1,4 +1,4 @@
-// Login view: sign in with a pasted or saved agent token; below it, the public server status, stats, announcements, links and leaderboards, with saved agents marked.
+// Login view: sign in with a pasted or saved agent token; below it, the public server status, description, stats, announcements, links and leaderboards, with saved agents marked.
 import { endpoints } from '../api.js';
 import { getToken, setToken, setAgent, clearToken, getTokenHistory, addTokenHistory, removeTokenHistory } from '../state.js';
 import { navigate } from '../router.js';
@@ -96,6 +96,7 @@ async function renderServerInfo(el) {
     el.innerHTML = `
       <h3><i class="fa-solid fa-server"></i> Server</h3>
       ${statusLine(status)}
+      ${status.description ? `<p>${escapeHtml(status.description)}</p>` : ''}
       ${statsCard(status.stats)}
       ${(status.announcements ?? []).map(announcement).join('')}
       ${linksList(status.links)}

@@ -1,4 +1,4 @@
-// System view: the Sigma map of one system and a paginated grid of its waypoints, filtered by type and trait from the hash query.
+// System view: the system's summary, its Sigma map, and a paginated grid of its waypoints, filtered by type and trait from the hash query.
 // Each card's Navigate Here menu lists the ships orbiting elsewhere in the system, nearest first.
 import { endpoints, orNull } from '../api.js';
 import { getAgent, addDiscoveredSystem, getDiscoveredSystems } from '../state.js';
@@ -43,6 +43,15 @@ export async function render(params) {
 
     main.innerHTML = `
       <h2>${icon(STAR_TYPES, system.type)} ${systemSymbol} <small>${system.type}</small></h2>
+      <article>
+        <dl class="grid">
+          ${system.name ? `<div><dt>Name</dt><dd>${escapeHtml(system.name)}</dd></div>` : ''}
+          ${system.constellation ? `<div><dt>Constellation</dt><dd>${escapeHtml(system.constellation)}</dd></div>` : ''}
+          <div><dt>Sector</dt><dd>${escapeHtml(system.sectorSymbol)}</dd></div>
+          <div><dt>Coordinates</dt><dd>(${system.x}, ${system.y})</dd></div>
+          ${system.factions?.length ? `<div><dt>Factions</dt><dd>${system.factions.map((f) => factionLink(f.symbol)).join(', ')}</dd></div>` : ''}
+        </dl>
+      </article>
       <form role="search">
         <input type="text" name="system" list="discovered-systems" placeholder="Jump to system (e.g. X1-DF55)" required pattern="\\s*[\\w\\-]+\\s*">
         <button type="submit">Go</button>

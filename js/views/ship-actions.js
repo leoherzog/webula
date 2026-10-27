@@ -3,7 +3,7 @@ import { endpoints } from '../api.js';
 import { getSurveys, addSurveys, removeSurvey, addDiscoveredSystem } from '../state.js';
 import { performAction, openFormDialog, confirmAction, showToast, busyFetch, openNavigateDialog, refreshView } from '../actions.js';
 import { navigate } from '../router.js';
-import { escapeHtml, navStatusLabel, credits } from '../components/loading.js';
+import { escapeHtml, navStatusLabel, credits, factionLink } from '../components/loading.js';
 
 const FLIGHT_MODES = ['DRIFT', 'STEALTH', 'CRUISE', 'BURN'];
 // The refine endpoint's `produce` enum.
@@ -163,10 +163,21 @@ const SCANS = {
       w.traits.map((t) => pill(escapeHtml(t.name), t.description)).join(' ') || '-',
     ]), 'No waypoints in range')),
   'scan-ships': (btn, ship) => scan(btn, () => endpoints.scanShips(ship.symbol), 'Scanned Ships', ({ ships }) =>
-    table(['Ship', 'Role', 'Status', 'Location'], ships.map((s) => [
-      escapeHtml(s.symbol), s.registration.role, navStatusLabel(s.nav.status), s.nav.waypointSymbol,
-    ]), 'No ships in range')),
+    table(['Ship', 'Status', 'Equipment'], ships.map(scannedShipRow), 'No ships in range')),
 };
+
+/** One Scanned Ships row in three stacked columns, narrow enough for a phone's dialog; frame, reactor, engine and mounts may be absent. */
+function scannedShipRow(s) {
+  const { registration: reg, nav } = s;
+  const parts = [s.frame, s.reactor, s.engine].filter(Boolean).map((p) => escapeHtml(p.symbol));
+  const mounts = (s.mounts ?? []).map((m) => pill(escapeHtml(m.symbol))).join(' ');
+  return [
+    // factionLink takes no attributes, so a wrapping span carries data-close.
+    `<strong>${escapeHtml(s.symbol)}</strong><br><small>${reg.name && reg.name !== s.symbol ? `${escapeHtml(reg.name)} · ` : ''}${reg.role} · <span data-close>${factionLink(reg.factionSymbol)}</span></small>`,
+    `${navStatusLabel(nav.status)}<br><small><a href="#/system/${nav.systemSymbol}/waypoint/${nav.waypointSymbol}" data-close>${nav.waypointSymbol}</a></small>`,
+    [parts.length && `<small>${parts.join('<br>')}</small>`, mounts].filter(Boolean).join('<br>') || '-',
+  ];
+}
 
 const DIALOGS = {
   ...SCANS,

@@ -37,11 +37,11 @@ api-docs/, pico/         # reference submodules; never edit
 
 | Hash | View |
 |---|---|
-| `#/login` | `login.js`: token login, saved agents, server status, stats, announcements, links, leaderboard with saved agents marked |
+| `#/login` | `login.js`: token login, saved agents, server status and description, stats, announcements, links, leaderboard with saved agents marked |
 | `#/fleet` | `fleet.js`: agent summary, ship cards |
 | `#/fleet/:shipSymbol` | `ship-detail.js`: stored surveys, registration, crew, part specs and requirements, cargo valued at the local market |
 | `#/contracts` | `contracts.js` |
-| `#/system`, `#/system/:systemSymbol` | `system.js`: map, waypoint cards filtered by type and trait |
+| `#/system`, `#/system/:systemSymbol` | `system.js`: system summary, map, waypoint cards filtered by type and trait |
 | `#/system/:systemSymbol/waypoint/:waypointSymbol` | `waypoint-detail.js`: market with supply chain, shipyard with ship specs, recent transactions, jump gate, construction |
 | `#/systems` | `systems.js`: every system, paginated |
 | `#/factions`, `#/factions/:factionSymbol` | `factions.js`: faction cards, or one faction with its trait descriptions |
@@ -64,7 +64,7 @@ Handlers also receive `params.query`, the hash's `URLSearchParams`, whose values
 ## Actions
 
 - `performAction(btn, apiFn, after = refreshView)` refuses offline, marks `btn` busy, toasts a summary of the response and each ship condition event in red, stores `data.agent` for the nav's credits, then runs `after`. It resolves null on failure and never rejects, so call sites need no try/catch. A custom `after` replaces the refresh, so it calls the exported `refreshView()` itself.
-- `openFormDialog(title, bodyHtml, onSubmit)` submits natively, so `required`, `min` and `max` validate. It stays open when `onSubmit` resolves null, so callbacks return `performAction(...)`. Without `onSubmit` it is read-only, with no form and one Close button, which is how scans show their results. Any `data-close` element inside closes it.
+- `openFormDialog(title, bodyHtml, onSubmit)` submits natively, so `required`, `min` and `max` validate. It stays open when `onSubmit` resolves null, so callbacks return `performAction(...)`. Without `onSubmit` it is read-only, with no form and one Close button, which is how scans show their results. Any `data-close` element inside closes it, so links in a result carry it or sit inside one.
 - `confirmAction(message)` takes HTML, so escape API text. Repair and scrap put the `repairQuote()` or `scrapQuote()` price in it.
 - `busyFetch(btn, fn)` runs a GET that feeds a dialog. `openNavigateDialog` and `openDeliverDialog` are the shared pickers.
 - Ship pickers for deliver, supply, transfer and negotiate take their ships from `endpoints.allShips()`. `openNavigateDialog` loads the system and `systemMarkets()` in one `busyFetch`, and a failed market lookup only drops the market flags.

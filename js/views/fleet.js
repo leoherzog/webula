@@ -31,6 +31,7 @@ export async function render(params) {
           <div><dt>Faction</dt><dd>${factionLink(agent.startingFaction)}</dd></div>
           <div><dt>Headquarters</dt><dd><a href="#/system/${hqSystem}/waypoint/${agent.headquarters}">${agent.headquarters}</a></dd></div>
           <div><dt>Credits</dt><dd>${credits(agent.credits)}</dd></div>
+          <div><dt>Ships</dt><dd>${agent.shipCount}</dd></div>
         </dl>
       </article>
       <h2>Fleet</h2>
