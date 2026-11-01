@@ -1,9 +1,8 @@
-// Login view: sign in with a pasted or saved agent token; below it, the public server status, description, stats, announcements, links and leaderboards, with saved agents marked.
+// Login view: sign in with a pasted or saved agent token; below it, the public server status, description, stats, announcements and links.
 import { endpoints } from '../api.js';
-import { getToken, setToken, setAgent, clearToken, getTokenHistory, addTokenHistory, removeTokenHistory } from '../state.js';
+import { setToken, setAgent, clearToken, getTokenHistory, addTokenHistory, removeTokenHistory } from '../state.js';
 import { navigate } from '../router.js';
-import { getMain, escapeHtml, credits, agentLink } from '../components/loading.js';
-import { renderNav } from '../components/nav.js';
+import { getMain, escapeHtml } from '../components/loading.js';
 import { confirmAction } from '../actions.js';
 
 export async function render() {
@@ -21,9 +20,9 @@ export async function render() {
         <button type="submit">Login</button>
       </form>
     </article>
-    <section id="leaderboard"></section>`;
+    <section id="server-info"></section>`;
 
-  renderServerInfo(main.querySelector('#leaderboard'));
+  renderServerInfo(main.querySelector('#server-info'));
 
   const form = main.querySelector('form');
   const input = form.elements.token;
@@ -63,7 +62,6 @@ export async function render() {
       const { data: agent } = await endpoints.myAgent();
       setAgent(agent);
       addTokenHistory(agent.symbol, token);
-      renderNav();
       navigate('#/fleet');
     } catch (err) {
       clearToken();
@@ -88,19 +86,13 @@ async function renderServerInfo(el) {
   el.setAttribute('aria-busy', 'true');
   try {
     const status = await endpoints.serverStatus();
-    const saved = new Set(getTokenHistory().map((h) => h.symbol));
-    const boards = [
-      leaderboardCard('Most Credits', 'Credits', status.leaderboards?.mostCredits, (e) => credits(e.credits), saved),
-      leaderboardCard('Most Charts', 'Charts', status.leaderboards?.mostSubmittedCharts, (e) => e.chartCount.toLocaleString(), saved),
-    ].join('');
     el.innerHTML = `
       <h3><i class="fa-solid fa-server"></i> Server</h3>
       ${statusLine(status)}
-      ${status.description ? `<p>${escapeHtml(status.description)}</p>` : ''}
+      ${status.description ? `<p>${linkGameName(status.description)}</p>` : ''}
       ${statsCard(status.stats)}
       ${(status.announcements ?? []).map(announcement).join('')}
-      ${linksList(status.links)}
-      ${boards ? `<h3><i class="fa-solid fa-trophy"></i> Leaderboard</h3><div class="grid">${boards}</div>` : ''}`;
+      ${linksList(status.links)}`;
   } catch {
     el.hidden = true;
   } finally {
@@ -112,6 +104,9 @@ function statusLine({ status, version, resetDate }) {
   const parts = [status, version && `API ${version}`, resetDate && `Last reset ${resetDate}`].filter(Boolean);
   return parts.length ? `<p><small>${parts.map(escapeHtml).join(' · ')}</small></p>` : '';
 }
+
+/** Escapes the description and links its first "SpaceTraders" to the game's homepage. */
+const linkGameName = (text) => escapeHtml(text).replace(/\bSpaceTraders\b/, '<a href="https://spacetraders.io" target="_blank" rel="noopener">$&</a>');
 
 const STAT_KEYS = ['accounts', 'agents', 'ships', 'systems', 'waypoints'];
 
@@ -140,24 +135,4 @@ function linksList(links) {
   if (!names.size) return '';
   const items = [...names].map(([href, name]) => `<li><a href="${escapeHtml(href)}" target="_blank" rel="noopener">${escapeHtml(name)}</a></li>`);
   return `<details><summary><i class="fa-solid fa-link"></i> Links</summary><ul>${items.join('')}</ul></details>`;
-}
-
-/** One leaderboard table, with the user's saved agents marked; empty when the API omits the list. */
-function leaderboardCard(title, scoreLabel, entries, score, saved) {
-  if (!Array.isArray(entries)) return '';
-  // Agent routes are guarded, so a logged-out user gets plain names.
-  const name = getToken() ? agentLink : escapeHtml;
-  // A bare <mark> keeps the link readable; Pico's azure link text vanishes on an azure-550 background.
-  const agent = (symbol) => saved.has(symbol) ? `<mark title="Saved agent">${name(symbol)}</mark>` : name(symbol);
-  const body = entries.length ? `
-    <div class="overflow-auto">
-      <table class="striped">
-        <thead><tr><th>#</th><th>Agent</th><th>${scoreLabel}</th></tr></thead>
-        <tbody>
-          ${entries.map((e, i) => `<tr><td>${i + 1}</td><td>${agent(e.agentSymbol)}</td><td>${escapeHtml(score(e))}</td></tr>`).join('')}
-        </tbody>
-      </table>
-    </div>
-  ` : '<p><small>No entries yet.</small></p>';
-  return `<article><header>${title}</header>${body}</article>`;
 }

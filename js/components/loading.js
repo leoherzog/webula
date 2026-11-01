@@ -56,6 +56,12 @@ export function agentLink(symbol) {
   return /^[\w-]+$/.test(symbol) ? `<a href="#/agents/${symbol}">${text}</a>` : text;
 }
 
+/** A pill marking the logged-in agent or a saved one, set beside the name; '' for anyone else. */
+export function agentMark(symbol, me, saved) {
+  if (symbol === me) return '<mark class="pico-background-jade-500">You</mark>';
+  return saved.has(symbol) ? '<mark class="pico-background-azure-550" title="Saved agent">Saved</mark>' : '';
+}
+
 export function systemFromWaypoint(waypointSymbol) {
   const parts = waypointSymbol.split('-');
   return `${parts[0]}-${parts[1]}`;

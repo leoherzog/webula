@@ -75,8 +75,8 @@ export function orNull(promise) {
 }
 
 export const endpoints = {
-  // Unauthenticated: the server answers 401 to a token from before the last reset.
-  serverStatus: () => request('GET', '/', { auth: false }),
+  // Unauthenticated: the server answers 401 to a token from before the last reset. A view passes navSignal(), since unauthenticated GETs get none by default.
+  serverStatus: (signal) => request('GET', '/', { auth: false, signal }),
   myAgent: () => api.get('/my/agent'),
   myShips: (page) => fetchPage('/my/ships', page),
   allShips: () => fetchAllPages('/my/ships'),

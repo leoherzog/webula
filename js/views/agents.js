@@ -1,7 +1,7 @@
 // Agents view: a paginated table of every agent with the logged-in and saved agents marked, or one agent's public profile when the route names it.
 import { endpoints } from '../api.js';
 import { getAgent, getTokenHistory } from '../state.js';
-import { getMain, withLoading, escapeHtml, credits, factionLink, agentLink, systemFromWaypoint } from '../components/loading.js';
+import { getMain, withLoading, escapeHtml, credits, factionLink, agentLink, agentMark, systemFromWaypoint } from '../components/loading.js';
 import { paginationNav } from '../components/pagination.js';
 
 export async function render(params) {
@@ -55,12 +55,6 @@ function agentDetail(agent, me, saved) {
       </dl>
       ${agent.symbol === me ? '<footer><a href="#/fleet" role="button" class="outline"><i class="fa-solid fa-shuttle-space-vertical"></i> Your Fleet</a></footer>' : ''}
     </article>`;
-}
-
-/** A pill marking the logged-in agent or a saved one, matching the login leaderboard's saved-agent color; '' for anyone else. */
-function agentMark(symbol, me, saved) {
-  if (symbol === me) return '<mark class="pico-background-jade-500">You</mark>';
-  return saved.has(symbol) ? '<mark class="pico-background-azure-550" title="Saved agent">Saved</mark>' : '';
 }
 
 const hqLink = (wp) => `<a href="#/system/${systemFromWaypoint(wp)}/waypoint/${wp}">${wp}</a>`;

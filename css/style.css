@@ -34,3 +34,10 @@ mark {
   background: none;
   overflow: visible;
 }
+
+/* Top nav: narrower gaps on phones keep the icon links and the agent menu on one row. */
+@media (max-width: 575.98px) {
+  #app-nav {
+    --pico-nav-element-spacing-horizontal: 0.3rem;
+  }
+}

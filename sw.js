@@ -40,6 +40,7 @@ const APP_SHELL = [
   '/js/views/systems.js',
   '/js/views/factions.js',
   '/js/views/agents.js',
+  '/js/views/leaderboard.js',
 ];
 
 self.addEventListener('install', (event) => {

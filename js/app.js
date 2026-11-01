@@ -1,4 +1,4 @@
-// Entry point: registers the routes, guards every route but login behind a token, and starts the router.
+// Entry point: registers the routes, guards every route but login and leaderboard behind a token, and starts the router.
 import { addRoute, start, navigate } from './router.js';
 import { getToken } from './state.js';
 import { renderNav } from './components/nav.js';
@@ -14,19 +14,29 @@ import { render as waypointDetailView } from './views/waypoint-detail.js';
 import { render as systemsView } from './views/systems.js';
 import { render as factionsView } from './views/factions.js';
 import { render as agentsView } from './views/agents.js';
+import { render as leaderboardView } from './views/leaderboard.js';
 
+/** Wraps a public view: the nav renders for either auth state. */
+function page(viewFn) {
+  return (params) => {
+    renderNav();
+    viewFn(params);
+  };
+}
+
+/** Wraps a view that needs a token; without one it goes to login. */
 function guard(viewFn) {
   return (params) => {
     if (!getToken()) {
       navigate('#/login');
       return;
     }
-    renderNav();
-    viewFn(params);
+    page(viewFn)(params);
   };
 }
 
-addRoute('/login', loginView);
+addRoute('/login', page(loginView));
+addRoute('/leaderboard', page(leaderboardView));
 addRoute('/fleet', guard(fleetView));
 addRoute('/fleet/:shipSymbol', guard(shipDetailView));
 addRoute('/contracts', guard(contractsView));
