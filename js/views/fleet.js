@@ -1,7 +1,7 @@
 // Fleet view: the agent summary and a paginated grid of ship cards with orbit, dock and navigate buttons.
 import { endpoints } from '../api.js';
 import { getAgent, setAgent, addDiscoveredSystem } from '../state.js';
-import { getMain, withLoading, navStatusLabel, systemFromWaypoint, credits, factionLink, agentLink } from '../components/loading.js';
+import { getMain, withLoading, setContent, navStatusLabel, systemFromWaypoint, credits, factionLink, agentLink } from '../components/loading.js';
 import { renderNav } from '../components/nav.js';
 import { paginationNav } from '../components/pagination.js';
 import { icon, SHIP_FRAMES } from '../icons.js';
@@ -24,7 +24,7 @@ export async function render(params) {
     addDiscoveredSystem(hqSystem);
     for (const ship of ships) addDiscoveredSystem(ship.nav.systemSymbol);
 
-    main.innerHTML = `
+    const written = setContent(main, `
       <article>
         <dl class="grid">
           <div><dt>Symbol</dt><dd>${agentLink(agent.symbol)}</dd></div>
@@ -36,18 +36,19 @@ export async function render(params) {
       </article>
       <h2>Fleet</h2>
       ${ships.length ? `<div class="grid grid-3">${ships.map(shipCard).join('')}</div>` : '<p>No ships found.</p>'}
-      ${paginationNav(meta, '#/fleet')}`;
-    animateCountdowns();
+      ${paginationNav(meta, '#/fleet')}`);
+    if (written) animateCountdowns();
 
-    // Listen on this render's elements; listeners on #app-main pile up across renders.
-    main.querySelector('.grid-3')?.addEventListener('click', (e) => {
+    // A property handler on this render's element, so each poll replaces it with one that sees the new ships.
+    const grid = main.querySelector('.grid-3');
+    if (grid) grid.onclick = (e) => {
       const btn = e.target.closest('button[data-action]');
       if (!btn) return;
       const ship = ships.find((s) => s.symbol === btn.dataset.ship);
       if (btn.dataset.action === 'orbit') performAction(btn, () => endpoints.orbitShip(ship.symbol));
       else if (btn.dataset.action === 'dock') performAction(btn, () => endpoints.dockShip(ship.symbol));
       else openNavigateDialog(btn, ship);
-    });
+    };
   });
   if (ok) startRefresh(() => render(params));
 }

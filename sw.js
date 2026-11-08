@@ -73,10 +73,19 @@ async function networkFirst(request, cacheName) {
   try {
     response = await fetch(request);
   } catch {
-    return (await caches.match(request, { cacheName })) ?? offlineResponse();
+    const cached = await caches.match(request, { cacheName });
+    if (!cached) return offlineResponse();
+    return cacheName === API_CACHE ? markFallback(cached) : cached;
   }
   if (response.ok) store(request, response.clone(), cacheName);
   return response;
+}
+
+// api.js shows a response with this header but neither caches it nor counts it as a successful poll; the name must match FALLBACK_HEADER there.
+function markFallback(response) {
+  const headers = new Headers(response.headers);
+  headers.set('x-webula-fallback', '1');
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
 async function store(request, response, cacheName) {

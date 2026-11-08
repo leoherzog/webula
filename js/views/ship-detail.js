@@ -1,7 +1,7 @@
 // Ship detail view: navigation, status, stored surveys, registration, crew, frame, reactor, engine, cargo valued at the current market, and expandable modules and mounts, with the actions from ship-actions.js in each card's footer.
 import { endpoints, orNull } from '../api.js';
 import { addDiscoveredSystem } from '../state.js';
-import { getMain, withLoading, navStatusLabel, systemFromWaypoint, escapeHtml, credits, factionLink } from '../components/loading.js';
+import { getMain, withLoading, setContent, navStatusLabel, systemFromWaypoint, escapeHtml, credits, factionLink } from '../components/loading.js';
 import { icon, SHIP_FRAMES } from '../icons.js';
 import { startRefresh } from '../refresh.js';
 import { animateCountdowns } from '../components/countdown.js';
@@ -96,7 +96,7 @@ export async function render(params) {
       ? ` · <i class="fa-solid fa-coins"></i> ≈${credits(valued.reduce((sum, i) => sum + prices.get(i.symbol) * i.units, 0))}`
       : '';
 
-    main.innerHTML = `<div>
+    const written = setContent(main, `<div>
       <nav aria-label="breadcrumb">
         <ul>
           <li><a href="#/fleet">Fleet</a></li>
@@ -203,9 +203,9 @@ export async function render(params) {
           ${footer(a.mounts)}
         </article>
       </div>
-    </div>`;
+    </div>`);
 
-    animateCountdowns();
+    if (written) animateCountdowns();
     bindShipActions(main.firstElementChild, ship, market);
   });
   if (ok) startRefresh(() => render(params));

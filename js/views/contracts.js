@@ -1,6 +1,6 @@
 // Contracts view: one card per contract with accept, deliver and fulfill actions, plus negotiating a new contract.
 import { endpoints } from '../api.js';
-import { getMain, withLoading, systemFromWaypoint, credits, factionLink } from '../components/loading.js';
+import { getMain, withLoading, setContent, systemFromWaypoint, credits, factionLink } from '../components/loading.js';
 import { paginationNav } from '../components/pagination.js';
 import { startRefresh } from '../refresh.js';
 import { performAction, openFormDialog, openDeliverDialog, confirmAction, showToast, busyFetch } from '../actions.js';
@@ -11,21 +11,21 @@ export async function render(params) {
   const main = getMain();
   const ok = await withLoading(main, async () => {
     const { data: contracts, meta } = await endpoints.myContracts(params.page);
-    main.innerHTML = `
+    setContent(main, `
       <section>
         <h2>Contracts</h2>
         <p><button class="outline" data-action="negotiate"><i class="fa-solid fa-file-circle-plus"></i> Negotiate New Contract</button></p>
         ${contracts.length ? `<div class="grid grid-3">${contracts.map(renderContractCard).join('')}</div>` : '<p>No contracts found.</p>'}
       </section>
-      ${paginationNav(meta, '#/contracts')}`;
+      ${paginationNav(meta, '#/contracts')}`);
 
-    // Listen on this render's elements; listeners on #app-main pile up across renders.
-    main.querySelector('section').addEventListener('click', (e) => {
+    // A property handler on this render's element, so each poll replaces it with one that sees the new contracts.
+    main.querySelector('section').onclick = (e) => {
       const btn = e.target.closest('button[data-action]');
       if (!btn) return;
       const contract = contracts.find((c) => c.id === btn.dataset.contractId);
       ACTIONS[btn.dataset.action](btn, contract);
-    });
+    };
   });
   if (ok) startRefresh(() => render(params));
 }

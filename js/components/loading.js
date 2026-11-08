@@ -1,17 +1,22 @@
 // Render helpers shared by views: the loading/error wrapper, HTML escaping, and small formatters.
-import { isRefreshing } from '../refresh.js';
+import { isRefreshing, beginRender, reportFailure } from '../refresh.js';
 import { icon, FACTIONS } from '../icons.js';
+
+// The HTML setContent last wrote into each element; the spinner and error card clear it.
+const shown = new WeakMap();
 
 export function getMain() {
   return document.getElementById('app-main');
 }
 
 function showLoading(el) {
+  shown.delete(el);
   el.setAttribute('aria-busy', 'true');
   el.innerHTML = '<p>Loading...</p>';
 }
 
 function showError(el, error) {
+  shown.delete(el);
   el.removeAttribute('aria-busy');
   el.innerHTML = `
     <article>
@@ -24,18 +29,33 @@ function showError(el, error) {
 
 /**
  * Runs fn with Pico's spinner on el and renders any error into it; a poll skips the spinner and keeps old content on any error but 401.
+ * Reports a failed render to refresh.js, which backs off.
  * @returns {Promise<boolean>} false when a route change aborted fn; the caller must not start polling then.
  */
 export async function withLoading(el, fn) {
   const quiet = isRefreshing();
   if (!quiet) showLoading(el);
+  beginRender();
   try {
     await fn();
   } catch (err) {
     if (err.name === 'AbortError') return false;
+    reportFailure(err);
     if (!quiet || err.status === 401) showError(el, err);
   }
   el.removeAttribute('aria-busy');
+  return true;
+}
+
+/**
+ * Writes html into el, except on a poll whose html matches what el shows, so focus, an open select and busy buttons survive.
+ * Every route change shows the spinner first, so only the same view's last render can match.
+ * @returns {boolean} whether el was rewritten; when false, skip work for new elements such as animateCountdowns().
+ */
+export function setContent(el, html) {
+  if (isRefreshing() && shown.get(el) === html) return false;
+  el.innerHTML = html;
+  shown.set(el, html);
   return true;
 }
 

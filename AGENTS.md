@@ -19,7 +19,7 @@ js/
   state.js               # localStorage: token, agents, systems, surveys
   icons.js               # JSON-module import of icons.json, icon()
   actions.js             # performAction, dialogs, toasts, shared pickers
-  refresh.js             # 30 s polling
+  refresh.js             # 5 s polling with backoff
   offline.js             # offline badge, Last updated footer
   components/
     loading.js           # withLoading, escapeHtml, navStatusLabel, credits, factionLink, agentLink, agentMark
@@ -56,11 +56,14 @@ Handlers also receive `params.query`, the hash's `URLSearchParams`, whose values
 
 - `render(params)` wraps its work in `withLoading(getMain(), fn)`, which shows the spinner, renders errors, and adds a login link on a 401.
 - A route change aborts the previous view's GETs. `withLoading` then returns false and writes nothing, leaving `aria-busy` on `#app-main` for the next view's spinner. A view that writes `#app-main` without `withLoading`, like login, must remove `aria-busy` itself.
-- Fleet, contracts, ship detail and waypoint detail poll every 30 s, calling `startRefresh(() => render(params))` only when `withLoading` returned true. A poll keeps the old content on any error but 401. Systems, factions, agents and leaderboard show static data and don't poll.
-- Build the page HTML in one template and assign it once. A render thus closes open `<details>`, so ship detail and waypoint detail key theirs and reopen the keys that were open. Read the keys before `withLoading`, whose spinner replaces the page on the refresh after an action, and scope them to the page's symbol so another ship or waypoint doesn't inherit them.
-- Data fixed for a server reset, like the supply chain, is memoized at module level after the first success. A failure is not cached.
+- Fleet, contracts, ship detail and waypoint detail poll every 5 s, calling `startRefresh(() => render(params))` only when `withLoading` returned true. Systems, factions, agents and leaderboard show static data and don't poll.
+- A poll keeps the old content on any error but 401. `withLoading` reports a failed render to `refresh.js`, and `api.js` reports every 429, 5xx, network failure and service-worker fallback, so a page that survives a failed `orNull()` sub-fetch still backs off.
+- After a failure the next poll waits 10 s, or 2 min for a 502 because the API's DDoS layer asks for a few minutes. Each further failure at least doubles the wait, up to 5 min. A 401 stops polling. A hidden or offline tab skips polls and runs the one that came due when it returns.
+- Build the page HTML in one template and assign it once. Polled views assign it with `setContent(main, html)`, which skips the write when a poll renders the same HTML, so focus, an open select and busy buttons survive. Run `animateCountdowns()` only when it returns true.
+- A write closes open `<details>`, so ship detail and waypoint detail key theirs and reopen the keys that were open. Read the keys before `withLoading`, whose spinner replaces the page on the refresh after an action, and scope them to the page's symbol so another ship or waypoint doesn't inherit them.
+- Data fixed for a server reset, like the supply chain, uses the `FIXED` cache tier in `api.js`, so views fetch it on every render.
 - Put action buttons in the card's `<footer>`, and omit the footer when it would be empty.
-- Bind delegated listeners to an element the render created, never to `#app-main`, which outlives renders and would gain a listener per poll.
+- Polled views bind delegated listeners as `onclick` or `onchange` properties on an element the render created. A poll that skips the write rebinds on the same element, and a property replaces the old handler with one that sees the new data, where `addEventListener` would stack them. Never bind to `#app-main`, which outlives views and would keep the handler on the next route.
 
 ## Actions
 
@@ -78,8 +81,11 @@ Handlers also receive `params.query`, the hash's `URLSearchParams`, whose values
 ## API client
 
 - Every call carries the bearer token except `serverStatus()`, because `GET /` answers 401 to a token from before the last reset.
-- Authenticated GETs carry `navSignal()`. A view passes it to `serverStatus(signal)` itself, because unauthenticated GETs get none. Wrap optional sub-fetches in `orNull()`, which rethrows `AbortError` so a superseded render stops.
-- A 429 is retried 3 times after `retry-after`.
+- Authenticated GETs carry `navSignal()`. A view passes it to `serverStatus(signal)` itself, because unauthenticated GETs get none. Wrap optional sub-fetches in `orNull()`, which rethrows `AbortError` so a superseded render stops, and a 401 so the page shows the login link and polling stops.
+- A 429 is retried 3 times. One from the rate limiter carries `x-ratelimit-type` and waits its `retry-after`; any other backs off 1, 2, then 4 s. The limits are 2 requests per second per IP and per account, with a burst of 30 over 60 s.
+- Authenticated GETs may pass a TTL: `FRESH` (30 s) for markets, shipyards, construction and agents, `SLOW` (5 min) for waypoints and factions, and `FIXED` for systems, jump gates and the supply chain. `/my/*` is never cached.
+- A write drops every cache entry but `FIXED` ones, even when its connection fails, and a GET in flight during a write is not stored. A token change drops them all, and a GET in flight during one is not stored. The cache stores and returns `structuredClone` copies, so callers may mutate responses.
+- A cache hit throws `AbortError` when the route has changed, as an aborted fetch would. A non-JSON error body, like a gateway 502, becomes an `ApiError`.
 - `fetchPage` and `fetchAllPages` take extra query params. Null and empty values are dropped, and an array becomes a repeated key. `systemWaypoints(system, page, { type, traits })` sends only those two filters.
 - Responses are `{ data, meta? }`, where `meta` has `total`, `page` and `limit`. `GET /` is unwrapped, and a 204 becomes `{ data: null }`.
 - Errors carry `message`, `status` and the API's numeric error `code`.
@@ -92,6 +98,7 @@ Handlers also receive `params.query`, the hash's `URLSearchParams`, whose values
 - Cache keys ignore the token, so `state.js` deletes `webula-api` when the token changes or is cleared. That name must match `API_CACHE` in `sw.js`.
 - `APP_SHELL` must list exactly the shipped files, because one 404 fails the install. Editing `sw.js` reinstalls the worker; code changes need no version bump.
 - Offline with nothing cached, a GET gets a 503 JSON "You are offline". Writes pass through, and `performAction` refuses them offline.
+- A cached API copy served for a failed fetch carries `x-webula-fallback`, which `api.js` shows but neither caches nor counts as a successful poll. The name must match `FALLBACK_HEADER` in `api.js`.
 - Fresh API responses post `api-updated`, which `offline.js` shows as Last updated.
 
 ## Icons and CI

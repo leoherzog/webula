@@ -2,19 +2,10 @@
 // Market goods show their supply-chain links, and the market and shipyard list their recent transactions.
 import { endpoints, orNull } from '../api.js';
 import { addDiscoveredSystem } from '../state.js';
-import { getMain, withLoading, escapeHtml, systemFromWaypoint, credits, factionLink, agentLink } from '../components/loading.js';
+import { getMain, withLoading, setContent, escapeHtml, systemFromWaypoint, credits, factionLink, agentLink } from '../components/loading.js';
 import { icon, WAYPOINT_TYPES, SHIP_FRAMES } from '../icons.js';
 import { startRefresh } from '../refresh.js';
 import { performAction, confirmAction, busyFetch, openDeliverDialog } from '../actions.js';
-
-// The supply chain is fixed within a server reset, so the first successful fetch serves every later render and poll.
-let supplyChain = null;
-
-/** The export-to-import map, or null when the fetch fails; a failure is not cached. */
-async function getSupplyChain() {
-  supplyChain ??= (await orNull(endpoints.supplyChain()))?.data?.exportToImportMap ?? null;
-  return supplyChain;
-}
 
 export async function render(params) {
   const { systemSymbol, waypointSymbol } = params;
@@ -29,13 +20,14 @@ export async function render(params) {
     const isJumpGate = wp.type === 'JUMP_GATE';
     const isUnderConstruction = wp.isUnderConstruction;
 
-    const [marketRes, shipyardRes, jumpGateRes, constructionRes, chain] = await Promise.all([
+    const [marketRes, shipyardRes, jumpGateRes, constructionRes, chainRes] = await Promise.all([
       hasMarket ? orNull(endpoints.waypointMarket(systemSymbol, waypointSymbol)) : null,
       hasShipyard ? orNull(endpoints.waypointShipyard(systemSymbol, waypointSymbol)) : null,
       isJumpGate ? orNull(endpoints.waypointJumpGate(systemSymbol, waypointSymbol)) : null,
       isUnderConstruction ? orNull(endpoints.waypointConstruction(systemSymbol, waypointSymbol)) : null,
-      hasMarket ? getSupplyChain() : null,
+      hasMarket ? orNull(endpoints.supplyChain()) : null,
     ]);
+    const chain = chainRes?.data?.exportToImportMap ?? null;
 
     addDiscoveredSystem(systemSymbol);
 
@@ -51,7 +43,7 @@ export async function render(params) {
       `<li><a href="#/system/${systemSymbol}/waypoint/${o.symbol}">${escapeHtml(o.symbol)}</a></li>`
     ).join('') || '';
 
-    main.innerHTML = `
+    setContent(main, `
       <div data-waypoint="${waypointSymbol}">
         <nav aria-label="breadcrumb">
           <ul>
@@ -131,10 +123,10 @@ export async function render(params) {
           </article>
         ` : ''}
       </div>
-    `;
+    `);
 
-    // Listen on this render's elements; listeners on #app-main pile up across renders.
-    main.firstElementChild.addEventListener('click', async (e) => {
+    // A property handler on this render's element, so each poll replaces it with one that sees the new construction site.
+    main.firstElementChild.onclick = async (e) => {
       const btn = e.target.closest('button[data-action]');
       if (btn?.dataset.action === 'buy-ship') {
         const { type, price } = btn.dataset;
@@ -148,7 +140,7 @@ export async function render(params) {
         if (ships) openDeliverDialog(btn, `Supply ${m.tradeSymbol}`, ships, m.tradeSymbol, m.required - m.fulfilled,
           (shipSymbol, units) => endpoints.supplyConstruction(systemSymbol, waypointSymbol, { shipSymbol, tradeSymbol: m.tradeSymbol, units }));
       }
-    });
+    };
   });
   if (ok) startRefresh(() => render(params));
 }

@@ -115,27 +115,31 @@ export function shipActions(ship, waypoint, market) {
   };
 }
 
+// Re-enables cooldown-bound buttons when the shown ship's cooldown ends; each bind replaces it.
+let cooldownTimer;
+
 /**
- * Handles every action inside root, which must be created by the current render: #app-main outlives renders and would gain a listener per poll.
+ * Handles every action inside root, an element the render created, through property handlers, so each poll's bind replaces them with ones that see the new ship.
  * @param {object|null} market the Market passed to shipActions(); Sell and Buy reuse it and fetch only when it is null.
  */
 export function bindShipActions(root, ship, market) {
-  root.addEventListener('click', (e) => {
+  root.onclick = (e) => {
     const btn = e.target.closest('button[data-action]');
     if (!btn) return;
     const { action } = btn.dataset;
     if (SIMPLE[action]) performAction(btn, () => SIMPLE[action](ship.symbol));
     else DIALOGS[action](btn, ship, market);
-  });
-  root.addEventListener('change', (e) => {
+  };
+  root.onchange = (e) => {
     const select = e.target;
     if (select.name !== 'flightMode') return;
     performAction(select, () => endpoints.setFlightMode(ship.symbol, select.value))
       .then((result) => { if (!result) select.value = ship.nav.flightMode; });
-  });
+  };
+  clearTimeout(cooldownTimer);
   const { cooldown } = ship;
   if (cooldown.remainingSeconds > 0) {
-    setTimeout(() => {
+    cooldownTimer = setTimeout(() => {
       for (const btn of root.querySelectorAll('[data-cooldown]')) btn.disabled = false;
     }, Date.parse(cooldown.expiration) - Date.now());
   }
