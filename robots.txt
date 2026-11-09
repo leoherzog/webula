@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /api-docs/
+Disallow: /pico/
+Disallow: /scripts/
+Disallow: /AGENTS.md
