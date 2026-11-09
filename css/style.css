@@ -35,6 +35,13 @@ mark {
   overflow: visible;
 }
 
+/* Agent menu: Pico makes a nav dropdown inline, and Firefox then anchors the menu to the empty inline fragment before the block summary, left of the button. Zero margins and top alignment keep the nav the height it has with the inline box. */
+#app-nav details.dropdown {
+  display: inline-block;
+  margin-block: 0;
+  vertical-align: top;
+}
+
 /* Top nav: narrower gaps on phones keep the icon links and the agent menu on one row. */
 @media (max-width: 575.98px) {
   #app-nav {

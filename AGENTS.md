@@ -119,7 +119,7 @@ Handlers also receive `params.query`, the hash's `URLSearchParams`, whose values
 
 ## Conventions
 
-- Pico and Font Awesome first. Check `pico/scss/` and the FA utilities (`fa-fw`, `fa-spin`, `fa-stack`, `fa-ul`/`fa-li`, sizes) before writing CSS. `style.css` holds only the `dl` grid, the `mark` pill shape, `.grid-3`, `#toasts` and the phone nav spacing.
+- Pico and Font Awesome first. Check `pico/scss/` and the FA utilities (`fa-fw`, `fa-spin`, `fa-stack`, `fa-ul`/`fa-li`, sizes) before writing CSS. `style.css` holds only the `dl` grid, the `mark` pill shape, `.grid-3`, `#toasts`, the agent menu's inline-block fix for Firefox and the phone nav spacing.
 - A card is an `<article>` with a `<header>`, and its actions go in a `<footer>`. Card lists use `<div class="grid grid-3">`.
 - `aria-busy="true"` shows Pico's spinner.
 - `.outline` and `.secondary` mark lesser buttons. Destructive actions are `outline secondary` with a red `fa-trash-can`, behind a `confirmAction`.
