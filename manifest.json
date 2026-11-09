@@ -1,7 +1,7 @@
 {
   "name": "Webula",
   "short_name": "Webula",
-  "description": "GUI for the SpaceTraders API game",
+  "description": "Play SpaceTraders in your browser. Webula manages your fleet, contracts, markets, shipyards and system maps, with live updates and an installable app.",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#0e1118",

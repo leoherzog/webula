@@ -7,8 +7,8 @@ It is vanilla ES modules with no build step and no `package.json`. Pico CSS and 
 ## Files
 
 ```
-index.html               # shell: nav, main, footer, #toasts; registers sw.js
-manifest.json, icons/    # PWA manifest and icons
+index.html               # shell: search and preview meta, JSON-LD, nav, main, footer, #toasts; registers sw.js
+manifest.json, icons/    # PWA manifest, icons, and the og-image.png link preview
 sw.js                    # network-first service worker
 css/style.css            # the few rules Pico lacks
 icons.json               # enum to icon and color map
@@ -96,10 +96,16 @@ Handlers also receive `params.query`, the hash's `URLSearchParams`, whose values
 
 - Every GET is network-first, and the cache answers only offline. API responses go to `webula-api`, newest 100; everything else goes to `SHELL_CACHE`.
 - Cache keys ignore the token, so `state.js` deletes `webula-api` when the token changes or is cleared. That name must match `API_CACHE` in `sw.js`.
-- `APP_SHELL` must list exactly the shipped files, because one 404 fails the install. Editing `sw.js` reinstalls the worker; code changes need no version bump.
+- `APP_SHELL` must list every file the app loads and nothing that is missing, because one 404 fails the install. `icons/og-image.png` stays out, because the app never loads it. Editing `sw.js` reinstalls the worker; code changes need no version bump.
 - Offline with nothing cached, a GET gets a 503 JSON "You are offline". Writes pass through, and `performAction` refuses them offline.
 - A cached API copy served for a failed fetch carries `x-webula-fallback`, which `api.js` shows but neither caches nor counts as a successful poll. The name must match `FALLBACK_HEADER` in `api.js`.
 - Fresh API responses post `api-updated`, which `offline.js` shows as Last updated.
+
+## Search and previews
+
+- Search engines drop the hash, so `/` is the only indexable page. Its title, description, canonical link, Open Graph tags and JSON-LD live in the `index.html` head.
+- The description appears in the meta description, `og:description`, the JSON-LD and `manifest.json`. Change all four together.
+- `og:image` and the JSON-LD `image` need absolute URLs. `icons/og-image.png` is 1200×630.
 
 ## Icons and CI
 
