@@ -106,6 +106,7 @@ Handlers also receive `params.query`, the hash's `URLSearchParams`, whose values
 - Search engines drop the hash, so `/` is the only indexable page. Its title, description, canonical link, Open Graph tags and JSON-LD live in the `index.html` head.
 - The description appears in the meta description, `og:description`, the JSON-LD and `manifest.json`. Change all four together.
 - `og:image` and the JSON-LD `image` need absolute URLs. `icons/og-image.png` is 1200×630.
+- `app.js` sets `document.title` to the route's name plus " · Webula". Login keeps the title from `index.html`, because Google indexes the rendered homepage, which is login.
 
 ## Icons and CI
 

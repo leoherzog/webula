@@ -16,38 +16,46 @@ import { render as factionsView } from './views/factions.js';
 import { render as agentsView } from './views/agents.js';
 import { render as leaderboardView } from './views/leaderboard.js';
 
-/** Wraps a public view: the nav renders for either auth state. */
-function page(viewFn) {
+// index.html's title, which crawlers index for the homepage; login keeps it.
+const HOME_TITLE = document.title;
+
+/**
+ * Wraps a public view: sets the tab title, and the nav renders for either auth state.
+ * @param {string | ((params: object) => string)} [title] page name before " · Webula"; omitted keeps HOME_TITLE
+ */
+function page(viewFn, title) {
   return (params) => {
+    const name = typeof title === 'function' ? title(params) : title;
+    document.title = name ? `${name} · Webula` : HOME_TITLE;
     renderNav();
     viewFn(params);
   };
 }
 
 /** Wraps a view that needs a token; without one it goes to login. */
-function guard(viewFn) {
+function guard(viewFn, title) {
   return (params) => {
     if (!getToken()) {
       navigate('#/login');
       return;
     }
-    page(viewFn)(params);
+    page(viewFn, title)(params);
   };
 }
 
 addRoute('/login', page(loginView));
-addRoute('/leaderboard', page(leaderboardView));
-addRoute('/fleet', guard(fleetView));
-addRoute('/fleet/:shipSymbol', guard(shipDetailView));
-addRoute('/contracts', guard(contractsView));
-addRoute('/system', guard(systemView));
-addRoute('/system/:systemSymbol', guard(systemView));
-addRoute('/system/:systemSymbol/waypoint/:waypointSymbol', guard(waypointDetailView));
-addRoute('/systems', guard(systemsView));
-addRoute('/factions', guard(factionsView));
-addRoute('/factions/:factionSymbol', guard(factionsView));
-addRoute('/agents', guard(agentsView));
-addRoute('/agents/:agentSymbol', guard(agentsView));
+addRoute('/leaderboard', page(leaderboardView, 'Leaderboard'));
+addRoute('/fleet', guard(fleetView, 'Fleet'));
+addRoute('/fleet/:shipSymbol', guard(shipDetailView, (p) => p.shipSymbol));
+addRoute('/contracts', guard(contractsView, 'Contracts'));
+addRoute('/system', guard(systemView, 'System'));
+addRoute('/system/:systemSymbol', guard(systemView, (p) => p.systemSymbol));
+addRoute('/system/:systemSymbol/waypoint/:waypointSymbol', guard(waypointDetailView, (p) => p.waypointSymbol));
+addRoute('/systems', guard(systemsView, 'Systems'));
+addRoute('/factions', guard(factionsView, 'Factions'));
+addRoute('/factions/:factionSymbol', guard(factionsView, (p) => p.factionSymbol));
+addRoute('/agents', guard(agentsView, 'Agents'));
+addRoute('/agents/:agentSymbol', guard(agentsView, (p) => p.agentSymbol));
 
 initOffline();
 initServerReset();
