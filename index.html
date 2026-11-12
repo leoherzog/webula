@@ -7,6 +7,7 @@
   <meta name="description" content="Play SpaceTraders in your browser. Webula manages your fleet, contracts, markets, shipyards and system maps, with live updates and an installable app.">
   <meta name="author" content="Leo Herzog | herzog.tech">
   <link rel="canonical" href="https://webula.herzog.tech/">
+  <meta name="robots" content="max-image-preview:large">
   <meta property="og:title" content="Webula: SpaceTraders Web Client">
   <meta property="og:description" content="Play SpaceTraders in your browser. Webula manages your fleet, contracts, markets, shipyards and system maps, with live updates and an installable app.">
   <meta property="og:type" content="website">
@@ -19,18 +20,32 @@
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="The Webula rocket logo beside the words Webula, SpaceTraders web client">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="fediverse:creator" content="@herzog@mastodon.social">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "WebSite",
+        "@id": "https://webula.herzog.tech/#website",
         "name": "Webula",
         "alternateName": "webula.herzog.tech",
-        "url": "https://webula.herzog.tech/"
+        "url": "https://webula.herzog.tech/",
+        "inLanguage": "en",
+        "publisher": { "@id": "https://herzog.tech/#person" }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://webula.herzog.tech/#webpage",
+        "url": "https://webula.herzog.tech/",
+        "name": "Webula: SpaceTraders Web Client",
+        "inLanguage": "en",
+        "isPartOf": { "@id": "https://webula.herzog.tech/#website" },
+        "mainEntity": { "@id": "https://webula.herzog.tech/#app" }
       },
       {
         "@type": "WebApplication",
+        "@id": "https://webula.herzog.tech/#app",
         "name": "Webula",
         "url": "https://webula.herzog.tech/",
         "description": "Play SpaceTraders in your browser. Webula manages your fleet, contracts, markets, shipyards and system maps, with live updates and an installable app.",
@@ -38,10 +53,29 @@
         "applicationCategory": "GameApplication",
         "operatingSystem": "Any",
         "browserRequirements": "Requires JavaScript",
+        "inLanguage": "en",
         "isAccessibleForFree": true,
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-        "author": { "@type": "Person", "name": "Leo Herzog", "url": "https://herzog.tech" },
+        "featureList": [
+          "Fleet and ship management",
+          "Contracts",
+          "Markets with supply chains",
+          "Shipyards",
+          "Interactive system maps",
+          "Faction and agent profiles",
+          "Leaderboard",
+          "Live updates",
+          "Installable app"
+        ],
+        "about": { "@type": "VideoGame", "name": "SpaceTraders", "url": "https://spacetraders.io/" },
+        "author": { "@id": "https://herzog.tech/#person" },
         "sameAs": "https://github.com/leoherzog/webula"
+      },
+      {
+        "@type": "Person",
+        "@id": "https://herzog.tech/#person",
+        "name": "Leo Herzog",
+        "url": "https://herzog.tech/"
       }
     ]
   }

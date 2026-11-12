@@ -9,7 +9,12 @@ export async function render() {
   const main = getMain();
   // A load aborted by this route change leaves the previous view's spinner flag set.
   main.removeAttribute('aria-busy');
+  // Crawlers render this view as the homepage, so it holds the page's only <h1>.
   main.innerHTML = `
+    <hgroup>
+      <h1>Webula</h1>
+      <p>SpaceTraders web client</p>
+    </hgroup>
     <article>
       <header><h2>SpaceTraders Login</h2></header>
       <form>

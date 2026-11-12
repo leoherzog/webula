@@ -3,3 +3,5 @@ Disallow: /api-docs/
 Disallow: /pico/
 Disallow: /scripts/
 Disallow: /AGENTS.md
+
+Sitemap: https://webula.herzog.tech/sitemap.xml

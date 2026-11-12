@@ -1,0 +1,3 @@
+# The production pages.dev host duplicates webula.herzog.tech; Pages already sends noindex on preview deployments.
+https://:project.pages.dev/*
+	X-Robots-Tag: noindex

@@ -9,7 +9,9 @@ It is vanilla ES modules with no build step and no `package.json`. Pico CSS and 
 ```
 index.html               # shell: search and preview meta, JSON-LD, nav, main, footer, #toasts; registers sw.js
 404.html                 # Cloudflare Pages' answer to missing paths
-robots.txt               # keeps crawlers out of the submodules, scripts and this file
+robots.txt               # keeps crawlers out of the submodules, scripts and this file; names the sitemap
+sitemap.xml              # lists /, the only indexable page
+_headers                 # Pages response headers: noindex on the pages.dev host
 manifest.json, icons/    # PWA manifest, icons, and the og-image.png link preview
 sw.js                    # network-first service worker
 css/style.css            # the few rules Pico lacks
@@ -98,19 +100,22 @@ Handlers also receive `params.query`, the hash's `URLSearchParams`, whose values
 
 - Every GET is network-first, and the cache answers only offline. API responses go to `webula-api`, newest 100; everything else goes to `SHELL_CACHE`.
 - Cache keys ignore the token, so `state.js` deletes `webula-api` when the token changes or is cleared. That name must match `API_CACHE` in `sw.js`.
-- `APP_SHELL` must list every file the app loads and nothing that is missing, because one 404 fails the install. `404.html`, `robots.txt` and `icons/og-image.png` stay out, because the app never loads them. Editing `sw.js` reinstalls the worker; code changes need no version bump.
+- `APP_SHELL` must list every file the app loads and nothing that is missing, because one 404 fails the install. `404.html`, `robots.txt`, `sitemap.xml` and `icons/og-image.png` stay out, because the app never loads them. Editing `sw.js` reinstalls the worker; code changes need no version bump.
 - Offline with nothing cached, a GET gets a 503 JSON "You are offline". Writes pass through, and `performAction` refuses them offline.
 - A cached API copy served for a failed fetch carries `x-webula-fallback`, which `api.js` shows but neither caches nor counts as a successful poll. The name must match `FALLBACK_HEADER` in `api.js`.
 - Fresh API responses post `api-updated`, which `offline.js` shows as Last updated.
 
 ## Search and previews
 
-- Search engines drop the hash, so `/` is the only indexable page. Its title, description, canonical link, Open Graph tags and JSON-LD live in the `index.html` head.
+- Search engines drop the hash, so `/` is the only indexable page and the only URL in `sitemap.xml`. Its title, description, canonical link, Open Graph tags and JSON-LD live in the `index.html` head.
+- Bump the sitemap's `lastmod` when the homepage's content changes, meaning the `index.html` head or the login view.
 - The description appears in the meta description, `og:description`, the JSON-LD and `manifest.json`. Change all four together.
 - `og:image` and the JSON-LD `image` need absolute URLs. `icons/og-image.png` is 1200×630.
-- `app.js` sets `document.title` to the route's name plus " · Webula". Login keeps the title from `index.html`, because Google indexes the rendered homepage, which is login.
-- `404.html` makes Cloudflare Pages answer a missing path with a 404. Without it Pages serves `index.html` with a 200 for every path. It is served at any depth, so its URLs are root-absolute.
+- JSON-LD nodes reference each other by `@id`. The author and publisher is `https://herzog.tech/#person`, the Person node herzog.tech's own JSON-LD defines, so keep that `@id` matching it.
+- `app.js` sets `document.title` to the route's name plus " · Webula". Login keeps the title from `index.html`, because Google indexes the rendered homepage, which is login. For the same reason login renders the page's only `<h1>`.
+- `404.html` makes Cloudflare Pages answer a missing path with a 404. Without it Pages serves `index.html` with a 200 for every path. It is served at any depth, so its URLs are root-absolute. Pages also serves it at `/404` with a 200, so it carries `noindex`.
 - Pages serves the whole repo, submodules included. `robots.txt` disallows those, `scripts/` and `AGENTS.md`, and must never disallow `js/`, `css/` or `icons.json`, which Google needs to render the page.
+- The production `*.pages.dev` host duplicates the custom domain, so `_headers` sends it `X-Robots-Tag: noindex`. Pages adds that header to preview deployments itself.
 
 ## Icons and CI
 
